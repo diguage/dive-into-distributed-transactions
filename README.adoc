@@ -1,0 +1,66 @@
+= 深入研究分布式事务
+D瓜哥 <https://www.diguage.com>
+v0.0.1, 2025-05-13
+
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
+
+== 友情支持
+
+如果觉得对您有所帮助，看在D瓜哥码这么多字的辛苦上，请友情支持一下，D瓜哥感激不尽，😜
+
+[cols="2*^",frame=none]
+|===
+| image:docs/docs/assets/images/alipay.png[title="支付宝", alt="支付宝", width="90%"]
+| image:docs/docs/assets/images/wxpay.jpg[title="微信", alt="微信", width="90%"]
+|===
+
+有些打赏的朋友希望可以加个好友，欢迎关注D瓜哥的微信公众号，这样就可以通过公众号的回复直接给我发信息。
+
+image::docs/docs/assets/images/wx-jikerizhi.png[align="center",width=98%]
+
+TIP: **公众号的微信号是: `jikerizhi`**。__因为众所周知的原因，有时图片加载不出来。如果图片加载不出来可以直接通过搜索微信号来查找我的公众号。__
+
+
+== 常见分布式事务示例
+
+. 基于 XA 的两阶段提交
+. ABC
+
+
+
+
+
+
+== 将 HTML 转化成 PDF
+
+在 `pom.xml` 中已经内置了直接转出 PDF 的处理流程（为了平时的构建速度，默认是注释掉的）。但是，经过对比发现，使用 AsciiDoctor PDF 转出的 PDF，如果将 Asciidoctor Diagram 的图片格式设置为 PNG，那么图片模糊不清，放大以后还是看不清楚；如果设置为 SVG，则图片会多出一些不必要的线框。所以，推荐使用 HTML + https://wkhtmltopdf.org/[wkhtmltopdf]。流程如下：
+
+. 使用上面“使用方法”中的办法，将文档转化成 HTML，然后启动 HTTP Server，确保可以在浏览器中通过 <http://localhost:8888/target/docs/html/index.html> 查看到文档内容。
+. 使用如下命令，将文档转化成 PDF：
++
+--
+[source,bash]
+----
+$ wkhtmltopdf --page-size A4 \
+              --header-left "[section]" \
+              --header-right "[subsection]" \
+              --header-spacing 3 \
+              --header-font-size 10 \
+              --footer-spacing 4 \
+              --footer-left "D瓜哥 · https://www.diguage.com" \
+              --footer-right '[page] / [toPage]' \
+              --footer-font-size 10 \
+              --margin-top 25mm \
+              --margin-bottom 25mm \
+              --margin-left 20mm \
+              --margin-right 20mm \
+              http://localhost:8888/target/docs/html/index.html 文档标题.pdf
+----
+--

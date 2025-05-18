@@ -1,0 +1,824 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.diguage</groupId>
+        <artifactId>transactions</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>docs</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>rubygems</groupId>
+            <artifactId>rouge</artifactId>
+            <version>${rouge.version}</version>
+            <type>gem</type>
+        </dependency>
+        <dependency>
+            <groupId>rubygems</groupId>
+            <!-- https://github.com/asciidoctor/asciidoctor-tabs -->
+            <artifactId>asciidoctor-tabs</artifactId>
+            <version>${asciidoctor-tabs.version}</version>
+            <type>gem</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>rubygems</groupId>
+                    <artifactId>asciidoctor</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- <dependency>-->
+        <!--     <groupId>rubygems</groupId>-->
+        <!--     <artifactId>asciidoctor-diagram-plantuml</artifactId>-->
+        <!--     <version>${asciidoctor-diagram-plantuml.version}</version>-->
+        <!--     <type>gem</type>-->
+        <!-- </dependency>-->
+        <!-- <dependency>-->
+        <!--     <groupId>rubygems</groupId>-->
+        <!--     <artifactId>asciidoctor-diagram</artifactId>-->
+        <!--     <version>${asciidoctor-diagram.version}</version>-->
+        <!--     <type>gem</type>-->
+        <!--     <exclusions>-->
+        <!--         <exclusion>-->
+        <!--             <groupId>rubygems</groupId>-->
+        <!--             <artifactId>asciidoctor</artifactId>-->
+        <!--         </exclusion>-->
+        <!--         <exclusion>-->
+        <!--             <groupId>rubygems</groupId>-->
+        <!--             <artifactId>asciidoctor-diagram-plantuml</artifactId>-->
+        <!--         </exclusion>-->
+        <!--     </exclusions>-->
+        <!-- </dependency>-->
+        <dependency>
+            <groupId>rubygems</groupId>
+            <artifactId>asciidoctor-multipage</artifactId>
+            <version>${asciidoctor-multipage.version}</version>
+            <type>gem</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>rubygems</groupId>
+                    <artifactId>asciidoctor</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>rubygems</groupId>
+            <artifactId>asciidoctor-comment-links</artifactId>
+            <version>${asciidoctor-comment-links.version}</version>
+            <type>gem</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>rubygems</groupId>
+                    <artifactId>asciidoctor</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jruby</groupId>
+            <artifactId>jruby</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jruby</groupId>
+            <artifactId>jruby-complete</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <extensions>
+            <extension>
+                <!-- this allows us to download gems -->
+                <!-- 2.0.2 依赖了 jruby 9.4.5.0，也无法修改 -->
+                <groupId>org.jruby.maven</groupId>
+                <artifactId>mavengem-wagon</artifactId>
+                <version>${mavengem-wagon.version}</version>
+            </extension>
+        </extensions>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven-enforcer-plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>extra-enforcer-rules</artifactId>
+                        <version>${extra-enforcer-rules.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <!-- 检测 Maven 版本 -->
+                        <!-- https://maven.apache.org/enforcer/enforcer-rules/requireMavenVersion.html -->
+                        <id>enforce-versions</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.8.8</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>${java.version}</version>
+                                    <message>
+                                        <![CDATA[必须使用 Maven 3.8.8+ 和 JDK 21+ 构建。]]>
+                                    </message>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- 检查依赖重复声明的情况 -->
+                        <!-- https://maven.apache.org/enforcer/enforcer-rules/banDuplicatePomDependencyVersions.html -->
+                        <id>enforce-no-duplicate-declared-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <banDuplicatePomDependencyVersions/>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- 确保父子模块的版本是一致的。 -->
+                        <!-- https://maven.apache.org/enforcer/enforcer-rules/reactorModuleConvergence.html -->
+                        <id>enforce-reactorModuleConvergence</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <reactorModuleConvergence>
+                                    <message>父子模块的版本必须相同。</message>
+                                    <ignoreModuleDependencies>true</ignoreModuleDependencies>
+                                </reactorModuleConvergence>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- 检测依赖 -->
+                        <!-- https://maven.apache.org/enforcer/enforcer-rules/bannedDependencies.html -->
+                        <id>enforce-banned-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <!-- log4j -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>log4j</exclude>
+                                        <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                    </excludes>
+                                    <message><![CDATA[不能使用 log4j 及 slf4j-log4j12。]]></message>
+                                </bannedDependencies>
+
+                                <!-- commons log -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>commons-logging</exclude>
+                                    </excludes>
+                                    <message><![CDATA[不能使用 commons-logging。]]></message>
+                                </bannedDependencies>
+
+                                <!-- jdk log -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.slf4j:slf4j-jdk14</exclude>
+                                    </excludes>
+                                    <message><![CDATA[不能使用 slf4j-jdk14。]]></message>
+                                </bannedDependencies>
+
+                                <!-- logback 1.2.0+ -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>ch.qos.logback:*:[,1.2.8):jar</exclude>
+                                    </excludes>
+                                    <message><![CDATA[必须使用 logback 1.2.8+，低版本存在安全漏洞。]]></message>
+                                </bannedDependencies>
+
+                                <!-- log4j 2.17.1+ -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.apache.logging.log4j:*:[,2.17.1):jar</exclude>
+                                    </excludes>
+                                    <message><![CDATA[必须使用 log4j 2.17.1+，低版本存在安全漏洞。]]></message>
+                                </bannedDependencies>
+
+                                <!-- slf4j 1.7.25+ -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.slf4j:*:[,1.7.25):jar</exclude>
+                                    </excludes>
+                                    <message><![CDATA[必须使用 slf4j 1.7.25+。]]></message>
+                                </bannedDependencies>
+
+                                <!-- Jakarta Validation -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>javax.validation:validation-api:[,2.0.1.Final):jar</exclude>
+                                        <exclude>org.hibernate.validator:hibernate-validator:[,6.1.5.Final):jar
+                                        </exclude>
+                                        <exclude>
+                                            org.hibernate.validator:hibernate-validator-annotation-processor:[,6.1.5.Final):jar
+                                        </exclude>
+                                        <exclude>org.hibernate:hibernate-validator</exclude>
+                                    </excludes>
+                                    <message>
+                                        <![CDATA[必须使用 jakarta.validation:jakarta.validation-api:2.0.1+（或 javax.validation:validation-api:2.0.1.Final） 和 Hibernate Validator 6.1.5.Final+（org.hibernate.validator:hibernate-validator:6.1.5.Final 和 org.hibernate.validator:hibernate-validator-annotation-processor:6.1.5.Final）。不能使用低版本 javax.validation:validation-api 和 org.hibernate:hibernate-validator。]]>
+                                    </message>
+                                </bannedDependencies>
+
+                                <!-- ASM -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.ow2.asm:*:[,5.0):jar</exclude>
+                                    </excludes>
+                                    <message>
+                                        <![CDATA[必须使用 ASM 5.0+！ASM 从 5.0 开始支持 Java 8。]]>
+                                    </message>
+                                </bannedDependencies>
+
+                                <!-- AspectJ -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.aspectj:*:[,1.8.0):jar</exclude>
+                                    </excludes>
+                                    <message>
+                                        <![CDATA[必须使用 AspectJ 1.8.0+！AspectJ 从 1.8.0 开始支持 Java 8。]]>
+                                    </message>
+                                </bannedDependencies>
+
+                                <!-- CGLib -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>cglib:*:[,3.2.0):jar</exclude>
+                                    </excludes>
+                                    <message>
+                                        <![CDATA[必须使用 CGLib 3.2.0+！CGLib 从 3.2.0 开始支持 Java 8。]]>
+                                    </message>
+                                </bannedDependencies>
+
+                                <!-- lombok -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.projectlombok:lombok</exclude>
+                                    </excludes>
+                                    <includes>
+                                        <include>org.projectlombok:lombok:*:*:provided</include>
+                                    </includes>
+                                    <message>
+                                        <![CDATA[Lombok 不能在 runtime 被引入！请使用 provided。]]>
+                                    </message>
+                                </bannedDependencies>
+
+                                <!-- MySQL -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>mysql:mysql-connector-java:[,8.0.29)</exclude>
+                                    </excludes>
+                                    <includes>
+                                        <include>mysql:mysql-connector-java:5.1.49</include>
+                                    </includes>
+                                    <message>
+                                        <![CDATA[必须使用 MySQL 5.1.49 或者 8.0.29+。]]>
+                                    </message>
+                                </bannedDependencies>
+
+                                <!-- Javassist 3.24.0-GA+ -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.javassist:javassist:[,3.28.0-GA):jar</exclude>
+                                        <exclude>javassist:javassist</exclude>
+                                    </excludes>
+                                    <message><![CDATA[必须使用 Javassist 3.28.0-GA+，版本发现有安全漏洞。]]></message>
+                                </bannedDependencies>
+
+                                <!-- Bouncy Castle -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.bouncycastle:*-jdk11</exclude>
+                                        <exclude>org.bouncycastle:*-jdk12</exclude>
+                                        <exclude>org.bouncycastle:*-jdk13</exclude>
+                                        <exclude>org.bouncycastle:*-jdk14</exclude>
+                                        <exclude>org.bouncycastle:*-jdk15</exclude>
+                                        <exclude>org.bouncycastle:*-jdk15+</exclude>
+                                        <exclude>org.bouncycastle:*-jdk16</exclude>
+                                        <exclude>org.bouncycastle:*-jdk15on</exclude>
+                                        <exclude>org.bouncycastle:*-jdk16on</exclude>
+                                        <exclude>org.bouncycastle:*-jdk17on</exclude>
+                                        <exclude>org.bouncycastle:*-jdk15to18</exclude>
+                                    </excludes>
+                                    <message>
+                                        <![CDATA[必须使用 org.bouncycastle:*-jdk18on，该版本是针对 JDK 1.8+ 发布的。详情请看： https://www.bouncycastle.org/latest_releases.html]]>
+                                    </message>
+                                </bannedDependencies>
+
+                                <!-- Servlet -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>javax.servlet:servlet-api</exclude>
+                                        <exclude>javax.servlet:javax.servlet-api</exclude>
+                                    </excludes>
+                                    <includes>
+                                        <include>javax.servlet:javax.servlet-api:*:*:provided</include>
+                                    </includes>
+                                    <message>
+                                        <![CDATA[Servlet 必须以 provided 方式被引入，不能使用 runtime 或者 compile。请使用：javax.servlet:javax.servlet-api:3.0.1+。]]>
+                                    </message>
+                                </bannedDependencies>
+
+                                <!-- Spring Framework -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.springframework:*:[,5.2.22.RELEASE)</exclude>
+                                        <exclude>org.springframework:*:[5.3.0,5.3.20)</exclude>
+                                    </excludes>
+                                    <message>
+                                        <![CDATA[请使用 Spring Framework 5.2.22.RELEASE+ 或 5.3.20+，其余版本都存在漏洞！]]>
+                                    </message>
+                                </bannedDependencies>
+
+                                <!-- Spring Boot -->
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.springframework.boot:*:[,2.5.14)</exclude>
+                                        <exclude>org.springframework:*:[2.6.0,2.6.8)</exclude>
+                                    </excludes>
+                                    <message>
+                                        <![CDATA[请使用 Spring Boot 2.5.14+ 或 2.6.8+，低版本存在漏洞！]]>
+                                    </message>
+                                </bannedDependencies>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- 3.0.5 依赖 jruby-complete 9.4.5.0，可以配置 jrubyVersion-->
+                <groupId>org.jruby.maven</groupId>
+                <artifactId>gem-maven-plugin</artifactId>
+                <version>${gem-maven-plugin.version}</version>
+                <configuration>
+                    <jrubyVersion>${jruby.version}</jrubyVersion>
+                    <!-- https://stackoverflow.com/a/11277228/951836 -->
+                    <!-- GEM_HOME is where gems will be installed (by default). -->
+                    <gemHome>${gem.path}</gemHome>
+                    <!-- GEM_PATH provides the locations where gems can be found. -->
+                    <!-- Therefore GEM_PATH should include GEM_HOME -->
+                    <gemPath>${gem.path}</gemPath>
+                </configuration>
+                <executions>
+                    <!-- Install required gems in target directory -->
+                    <execution>
+                        <id>install-gems</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>initialize</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby</artifactId>
+                        <version>${jruby.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby-complete</artifactId>
+                        <version>${jruby.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>${download-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>install-font-NotoEmoji-Regular</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/NotoEmoji-Regular.ttf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>f224032937e77448b2586b171ed7d031</md5>
+                        </configuration>
+                    </execution>
+
+                    <!-- 等宽字体 -->
+                    <execution>
+                        <id>install-font-SourceCodePro-Regular</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceCodePro-Regular.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>881bfa23a0fc625abe2a8c38b2a72180</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-SourceCodePro-Semibold</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceCodePro-Semibold.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>e09d6d82c6e77726b03f3929dd2b6961</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-SourceCodePro-It</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceCodePro-It.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>6fc0b73a8f4b42cc9ecb5154e3b45dcd</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-SourceCodePro-BoldIt</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceCodePro-BoldIt.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>5b7d949c95111f4a7166553db479e5e1</md5>
+                        </configuration>
+                    </execution>
+                    <!-- JetBrains Mono -->
+                    <execution>
+                        <id>install-font-JetBrainsMono-Regular</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/JetBrainsMono-Regular.ttf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>d09f65145228b709a10fa0a06d522d89</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-JetBrainsMono-SemiBold</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/JetBrainsMono-SemiBold.ttf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>fa952b0ebc58a82f6fcfff6250284bc7</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-JetBrainsMono-Bold</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/JetBrainsMono-Bold.ttf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>8658ffe39dbfa1c12436789a50212180</md5>
+                        </configuration>
+                    </execution>
+
+                    <!-- 中文字体 -->
+                    <execution>
+                        <id>install-font-SourceHanSerifSC-Regular</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceHanSerifSC-Regular.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>3990fae1c68e4144013f92273fca41a9</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-SourceHanSerifSC-Bold</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceHanSerifSC-Bold.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>9bb66a8d136498b323b3549f95a53935</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-SourceHanSerifSC-Medium</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceHanSerifSC-Medium.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>46f15d8b48f93010232fbdb46c36006b</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-SourceHanSerifSC-SemiBold</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceHanSerifSC-SemiBold.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>c27bc5f59edac6bd68d7a15d4f6a05f8</md5>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>install-font-SourceHanSansSC-Regular</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceHanSansSC-Regular.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>56195441817e7172c4cd914388710f20</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-SourceHanSansSC-Bold</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceHanSansSC-Bold.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>c76f8a8f08293d0e1c5dc8302f7062aa</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-SourceHanSansSC-Medium</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceHanSansSC-Medium.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>ebc3cd485fe89cc90b38be33464894ae</md5>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-font-SourceHanSansSC-Heavy</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${pdf-fonts.baseuri}/SourceHanSansSC-Heavy.otf</url>
+                            <outputDirectory>${pdf-fonts.path}</outputDirectory>
+                            <md5>2dbb493c201153533bc0f92e93cee6af</md5>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>install-fonts-and-generate-config-file</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${project.basedir}/cfg/scripts/download-fonts.sh</executable>
+                            <executable>${project.basedir}/cfg/scripts/install-fonts.sh</executable>
+                            <!-- <commandlineArgs>Args</commandlineArgs> -->
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- 3.2.0 依赖 jruby 9.4.8.0/9.4.12.0 -->
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>${asciidoctor-maven-plugin.version}</version>
+                <configuration>
+                    <sourceDirectory>docs</sourceDirectory>
+                    <sourceDocumentName>index.adoc</sourceDocumentName>
+                    <attributes>
+                        <sourcedir>${project.build.sourceDirectory}/com/diguage/kuafu</sourcedir>
+                        <src_core_dir>${maven.multiModuleProjectDirectory}/kuafu-core/src/main/java/com/diguage/kuafu</src_core_dir>
+                        <basedir>${project.basedir}</basedir>
+                        <version>${project.version}</version>
+                        <doctype>book</doctype>
+                        <stem>latexmath</stem>
+                        <source-highlighter>rouge</source-highlighter>
+                        <rouge-style>github</rouge-style>
+                        <imagesdir>.</imagesdir>
+                        <docinfo>shared</docinfo>
+                        <docinfodir>assets/tags</docinfodir>
+                        <icons>font</icons>
+                        <linkcss>true</linkcss>
+                        <stylesdir>assets/styles</stylesdir>
+                        <toc/>
+                        <toclevels>3</toclevels>
+                        <sectnums>true</sectnums>
+                        <sectnumlevels>3</sectnumlevels>
+                        <sectanchors>true</sectanchors>
+                        <graphvizdot>/usr/local/bin/dot</graphvizdot>
+                        <project_basedir>${project.basedir}</project_basedir>
+                        <source_attr>linenums,indent=0,subs="attributes,verbatim,quotes"</source_attr>
+                        <java_src_attr>source%nowrap,java,{source_attr}</java_src_attr>
+                        <html_src_attr>source%nowrap,html,{source_attr}</html_src_attr>
+                        <image_attr>align="center",width=95%</image_attr>
+                        <diagram_attr>format=svg,align="center",width=95%</diagram_attr>
+                        <plantumlconfig>${project.basedir}/cfg/plantuml.cfg</plantumlconfig>
+                        <iconfont-cdn>//cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css</iconfont-cdn>
+                    </attributes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-multipage</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <backend>multipage_html5</backend>
+                            <doctype>book</doctype>
+                            <gemPath>${gem.path}</gemPath>
+                            <requires>
+                                <require>asciidoctor-tabs</require>
+                                <require>asciidoctor-diagram</require>
+                                <require>asciidoctor-multipage</require>
+                                <require>asciidoctor-comment-links</require>
+                            </requires>
+                            <outputDirectory>${project.build.directory}/docs/multipage</outputDirectory>
+                            <attributes>
+                                <toc>left</toc>
+                            </attributes>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>generate-html</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <backend>html5</backend>
+                            <doctype>book</doctype>
+                            <outputDirectory>${project.build.directory}/docs/html</outputDirectory>
+                            <attributes>
+                                <toc>left</toc>
+                            </attributes>
+                            <gemPath>${gem.path}</gemPath>
+                            <requires>
+                                <require>asciidoctor-tabs</require>
+                                <require>asciidoctor-diagram</require>
+                                <require>asciidoctor-comment-links</require>
+                            </requires>
+                        </configuration>
+                    </execution>
+
+                    <!-- <execution>-->
+                    <!--     <id>generate-epub</id>-->
+                    <!--     <phase>package</phase>-->
+                    <!--     <goals>-->
+                    <!--         <goal>process-asciidoc</goal>-->
+                    <!--     </goals>-->
+                    <!--     <configuration>-->
+                    <!--         <backend>epub3</backend>-->
+                    <!--         <sourceDocumentName>index.adoc</sourceDocumentName>-->
+                    <!--         <outputDirectory>${project.build.directory}/docs/epub</outputDirectory>-->
+                    <!--         <attributes>-->
+                    <!--             <source-highlighter>coderay</source-highlighter>-->
+                    <!--         </attributes>-->
+                    <!--         <requires>-->
+                    <!--             <require>asciidoctor-diagram</require>-->
+                    <!--         </requires>-->
+                    <!--     </configuration>-->
+                    <!-- </execution>-->
+
+                    <!-- <execution>-->
+                    <!--     <id>generate-pdf</id>-->
+                    <!--     <phase>package</phase>-->
+                    <!--     <goals>-->
+                    <!--         <goal>process-asciidoc</goal>-->
+                    <!--     </goals>-->
+                    <!--     <configuration>-->
+                    <!--         <backend>pdf</backend>-->
+                    <!--         <outputDirectory>${project.build.directory}/docs/pdf</outputDirectory>-->
+                    <!--         <attributes>-->
+                    <!--             <allow-uri-read/>-->
+                    <!--             <diagram_attr>format=svg,align="center",width=90%</diagram_attr>-->
+                    <!--             <pdf-fontsdir>${project.basedir}/cfg/fonts</pdf-fontsdir>-->
+                    <!--             <pdf-themesdir>${project.basedir}/cfg/theme</pdf-themesdir>-->
+                    <!--             &lt;!&ndash; Set Source theme &ndash;&gt;-->
+                    <!--             <pdf-theme>Source</pdf-theme>-->
+                    <!--             <pagenums/>-->
+                    <!--             <toc/>-->
+                    <!--             <idprefix/>-->
+                    <!--             <idseparator>-</idseparator>-->
+                    <!--             &lt;!&ndash; Fixes line wraps formatting inserting zero-width spaces (ZWSP) before CJ characters &ndash;&gt;-->
+                    <!--             <scripts>cjk</scripts>-->
+                    <!--             <pdf-version>1.7</pdf-version>-->
+                    <!--             <rouge-style>github</rouge-style>-->
+                    <!--             &lt;!&ndash;<media>screen</media>&ndash;&gt;-->
+                    <!--             &lt;!&ndash;<optimize>screen</optimize>&ndash;&gt;-->
+                    <!--             &lt;!&ndash;<media>prepress</media>&ndash;&gt;-->
+                    <!--             &lt;!&ndash;<optimize>prepress</optimize>&ndash;&gt;-->
+                    <!--         </attributes>-->
+                    <!--         <requires>-->
+                    <!--             <require>asciidoctor-diagram</require>-->
+                    <!--         </requires>-->
+                    <!--     </configuration>-->
+                    <!-- </execution>-->
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj</artifactId>
+                        <version>${asciidoctorj.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-pdf</artifactId>
+                        <version>${asciidoctorj-pdf.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-epub3</artifactId>
+                        <version>${asciidoctorj-epub3.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-diagram</artifactId>
+                        <version>${asciidoctorj-diagram.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-diagram-plantuml</artifactId>
+                        <version>1.2025.2</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby</artifactId>
+                        <version>${jruby.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby-complete</artifactId>
+                        <version>${jruby.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

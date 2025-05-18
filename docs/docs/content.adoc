@@ -1,0 +1,170 @@
+[#content]
+= 正文部分
+
+. 2PC 只能是数据库之间的分布式协议；如果需要跨服务，则不能使用。
+. 同样，JTA(Java Transaction API) 也是数据库层面的分布式事务协议。？可用实现有 Atomikos 和 Narayana。JDBC 事务局限为一个数据库连接，而 JTA 事务可以有多个参与者。JMS 也可以是参与者。
+. 如果需要跨服务的分布式事务，那么需要 JTS(Java Transaction Service): Java事务服务。可用实现有 Atomikos 和 Narayana。基于 CORBA对象事务服务（CORBA Object Transaction Service）。
+. 分布式事务的技术方案
+.. XA
+... 2PC
+... 3PC
+... JTA/JTS
+.. 补偿事务
+... TCC
+... Saga
+.. 最终一致性
+... 本地消息表，详见 https://queue.acm.org/detail.cfm?id=1394128[BASE: An Acid Alternative^]。坦白讲，这个方案很成熟，但是命名很混乱，还有很多别名：最终一致性，尽力交付等等
+... MQ 内置的事务消息
+... 最大交付？消息表+消息查询
+
+== 参考资料
+
+. https://www.cnblogs.com/tutar/p/4150603.html[jdbc jta jts概念 - tutar - 博客园^]
+. https://whatsrtos.github.io/Java/JavaEE-%E6%8A%80%E6%9C%AF%E6%A0%87%E5%87%86/[Java EE 技术标准（JTS,JMS,JMX,JTA,JPA,EJB,JNDI,JDBC） | 扔掉笔记 ᐛ^]
+. https://docs.pingcode.com/ask/96065.html[分布式事务中间件有哪些 – PingCode^]
+. https://cloud.tencent.com/developer/article/1630651[干货分享：分布式场景之刚性事务-2PC详解-腾讯云开发者社区-腾讯云^]
+. https://icyfenix.cn/architect-perspective/general-architecture/transaction/distributed.html[分布式事务 | 凤凰架构^]
+. https://pdai.tech/md/arch/arch-z-transection.html[分布式系统 - 分布式事务及实现方案 | Java 全栈知识体系^]
+. https://www.cnblogs.com/chengxy-nds/p/14046856.html[看了 5 种分布式事务方案，我司最终选择了 Seata，真香！ - 程序员小富 - 博客园^] -- 图画的不错
+. https://cloud.tencent.com/developer/article/1806989[七种分布式事务的解决方案，一次讲给你听！-腾讯云开发者社区-腾讯云^]
+. https://zhuanlan.zhihu.com/p/183753774[面试必问：分布式事务六种解决方案 - 知乎^]
+. https://zhuanlan.zhihu.com/p/183753774[面试必问：分布式事务六种解决方案 - 知乎^]
+. https://github.com/jbosstm/quickstart[The quickstarts for the narayana project]
+. https://www.narayana.io/[Narayana - The premier open source transaction manager^]
+. https://www.narayana.io//docs/project/index.html[Narayana Project Documentation^]
+. https://github.com/snowdrop/narayana-spring-boot[Narayana Spring Boot autoconfiguration and starter^]
+
+几个要点
+
+. 事件驱动
+. 最终一致性
+. 幂等性
+. 补偿机制，例如反查
+
+行内高亮： `java`。
+
+== 代码高亮
+
+[{java_src_attr}]
+----
+// include::{src_core_dir}/anno/EnableKuafu.java[]
+----
+
+== Tab 页
+
+[tabs]
+====
+Tab A:: Contents of Tab A.
+
+Tab B::
++
+Contents of Tab B.
+
+Tab C::
++
+--
+Contents of Tab C.
+
+Contains more than one block.
+--
+
+Tab D::
++
+--
+[{java_src_attr}]
+----
+public class Test {
+    public static void main(String[] args) {
+        System.out.println("Hello");
+    }
+}
+----
+--
+====
+
+=== 嵌套 Tab 页
+
+// https://github.com/asciidoctor/asciidoctor-tabs
+
+[tabs]
+======
+Tab A::
++
+Selecting Tab A reveals a tabset with Tab Y and Tab Z.
++
+[tabs]
+====
+Tab Y:: Contents of Tab Y, nested inside Tab A.
+Tab Z:: Contents of Tab Z, nested inside Tab A.
+====
+
+Tab B:: Just text.
+======
+
+== 图片
+
+=== 外部图片
+
+plantuml::assets/diagrams/observer.puml[{diagram_attr}]
+
+// 查看支持字体
+//[plantuml, {diagram_attr}]
+//....
+//@startuml
+//listfonts This is a test. 这是一个测试。這是一個測試。
+//@enduml
+//....
+
+=== 序列图
+
+seqdiag::assets/diagrams/seq.diag[{diagram_attr}]
+
+=== 文内图片
+
+[plantuml, {diagram_attr}]
+....
+@startuml
+title "**装饰模式**"
+
+abstract class Component {
+  + {abstract} operation() :void
+}
+note right: Component 是定义一个对象接口，\n可以给这些对象动态地添加职责。
+
+class ConcreteComponent {
+  + operation() :void
+}
+note "ConcreteComponent 是定义了\n一个具体的对象，也可以给这个\n对象添加一些职责。" as ccn
+ccn .. ConcreteComponent
+
+abstract class Decorator {
+  - component :Component
+  + {abstract} operation() :void
+}
+note "Decorator，装饰抽象类，\n继承了 Component，从外类\n来扩展 Component 的功能，\n但对于 Component 来说，\n是无需知道 Decorator 的存在的。" as dn
+Decorator .. dn
+
+class ConcreteDecoratorA {
+  + operation() :void
+}
+
+class ConcreteDecoratorB {
+  + operation() :void
+  - addBehavior() :void
+}
+note "ConcreteDecorator 就是具体的装饰对象，\n起到给 Component 添加职责的功能。" as cdn
+'cdn .. ConcreteDecoratorA
+'cdn .. ConcreteDecoratorB
+ConcreteDecoratorA .. cdn
+ConcreteDecoratorB .. cdn
+
+Decorator "-component" o-- Component
+
+Component <|-- ConcreteComponent
+Component <|-- Decorator
+Decorator <|-- ConcreteDecoratorA
+Decorator <|-- ConcreteDecoratorB
+
+footer D瓜哥 · https://www.diguage.com · 出品
+@enduml
+....
