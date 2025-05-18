@@ -21,3 +21,26 @@ services:
       timeout: 5s    # 请求超时时间为 5 秒
       retries: 6     # 如果检查失败，最多重试 6 次
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
+
+  # mysql -h127.0.0.1 -P3366 -uroot -p123456
+  # mysql -h127.0.0.1 -P3366 -uorder -p123456
+  mysql-order:
+    container_name: mysql-order
+    build:
+      context: .
+      dockerfile: images/mysql-order.dockerfile
+    image: order/mysql:8.4
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海时间
+    env_file:
+      - ./env/mysql.env
+    volumes:
+      - ./data/mysql/order:/bitnami/mysql/data/
+    ports:
+      - "3366:3306"
+    healthcheck:
+      test: ['CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh']
+      interval: 15s  # 每 15 秒检查一次
+      timeout: 5s    # 请求超时时间为 5 秒
+      retries: 6     # 如果检查失败，最多重试 6 次
+      start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
