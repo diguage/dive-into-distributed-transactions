@@ -3,17 +3,17 @@
 
 -- create root user and grant rights
 -- https://stackoverflow.com/a/16592722
-CREATE USER IF NOT EXISTS 'order'@'%' IDENTIFIED BY '123456';
-GRANT ALL ON `order`.* TO 'order'@'%';
+CREATE USER IF NOT EXISTS 'admin_order'@'%' IDENTIFIED BY '123456';
+GRANT ALL ON `db_order`.* TO 'admin_order'@'%';
 
 FLUSH PRIVILEGES;
 
 
 -- create databases
-CREATE DATABASE IF NOT EXISTS `order`
+CREATE DATABASE IF NOT EXISTS `db_order`
        default character set utf8mb4 collate utf8mb4_0900_ai_ci;
 
-USE `order`;
+USE `db_order`;
 
 DROP TABLE IF EXISTS `order_tbl`;
 CREATE TABLE `order_tbl`

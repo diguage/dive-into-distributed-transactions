@@ -3,17 +3,17 @@
 
 -- create root user and grant rights
 -- https://stackoverflow.com/a/16592722
-CREATE USER IF NOT EXISTS 'account'@'%' IDENTIFIED BY '123456';
-GRANT ALL ON `account`.* TO 'account'@'%';
+CREATE USER IF NOT EXISTS 'admin_account'@'%' IDENTIFIED BY '123456';
+GRANT ALL ON `db_account`.* TO 'admin_account'@'%';
 
 FLUSH PRIVILEGES;
 
 
 -- create databases
-CREATE DATABASE IF NOT EXISTS `account`
+CREATE DATABASE IF NOT EXISTS `db_account`
        default character set utf8mb4 collate utf8mb4_0900_ai_ci;
 
-USE `account`;
+USE `db_account`;
 
 DROP TABLE IF EXISTS `account_tbl`;
 CREATE TABLE `account_tbl`

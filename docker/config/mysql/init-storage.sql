@@ -3,17 +3,17 @@
 
 -- create root user and grant rights
 -- https://stackoverflow.com/a/16592722
-CREATE USER IF NOT EXISTS 'storage'@'%' IDENTIFIED BY '123456';
-GRANT ALL ON `storage`.* TO 'storage'@'%';
+CREATE USER IF NOT EXISTS 'admin_storage'@'%' IDENTIFIED BY '123456';
+GRANT ALL ON `db_storage`.* TO 'admin_storage'@'%';
 
 FLUSH PRIVILEGES;
 
 
 -- create databases
-CREATE DATABASE IF NOT EXISTS `storage`
+CREATE DATABASE IF NOT EXISTS `db_storage`
        default character set utf8mb4 collate utf8mb4_0900_ai_ci;
 
-USE `storage`;
+USE `db_storage`;
 
 
 DROP TABLE IF EXISTS `storage_tbl`;

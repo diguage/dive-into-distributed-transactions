@@ -1,6 +1,6 @@
 services:
   # mysql -h127.0.0.1 -P3356 -uroot -p123456
-  # mysql -h127.0.0.1 -P3356 -ustorage -p123456
+  # mysql -h127.0.0.1 -P3356 -uadmin_storage -p123456
   mysql-storage:
     container_name: mysql-storage
     build:
@@ -23,7 +23,7 @@ services:
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
 
   # mysql -h127.0.0.1 -P3366 -uroot -p123456
-  # mysql -h127.0.0.1 -P3366 -uorder -p123456
+  # mysql -h127.0.0.1 -P3366 -uadmin_order -p123456
   mysql-order:
     container_name: mysql-order
     build:
@@ -46,7 +46,7 @@ services:
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
 
   # mysql -h127.0.0.1 -P3376 -uroot -p123456
-  # mysql -h127.0.0.1 -P3376 -uaccount -p123456
+  # mysql -h127.0.0.1 -P3376 -uadmin_account -p123456
   mysql-account:
     container_name: mysql-account
     build:
