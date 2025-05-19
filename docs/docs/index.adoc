@@ -14,6 +14,8 @@ include::preface.adoc[leveloffset=+1]
 
 :sectnums:
 
+include::environment.adoc[leveloffset=+1]
+
 include::content.adoc[leveloffset=+1]
 
 include::license.adoc[leveloffset=+1]

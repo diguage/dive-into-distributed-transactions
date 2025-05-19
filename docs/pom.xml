@@ -652,6 +652,7 @@
                     <attributes>
                         <sourcedir>${project.build.sourceDirectory}/com/diguage/kuafu</sourcedir>
                         <src_core_dir>${maven.multiModuleProjectDirectory}/kuafu-core/src/main/java/com/diguage/kuafu</src_core_dir>
+                        <docker_basedir>${maven.multiModuleProjectDirectory}/docker</docker_basedir>
                         <basedir>${project.basedir}</basedir>
                         <version>${project.version}</version>
                         <doctype>book</doctype>
@@ -673,6 +674,10 @@
                         <project_basedir>${project.basedir}</project_basedir>
                         <source_attr>linenums,indent=0,subs="attributes,verbatim,quotes"</source_attr>
                         <java_src_attr>source%nowrap,java,{source_attr}</java_src_attr>
+                        <sql_src_attr>source%nowrap,sql,{source_attr}</sql_src_attr>
+                        <yaml_src_attr>source%nowrap,yaml,{source_attr}</yaml_src_attr>
+                        <docker_src_attr>source%nowrap,docker,{source_attr}</docker_src_attr>
+                        <bash_src_attr>source%nowrap,bash,{source_attr}</bash_src_attr>
                         <html_src_attr>source%nowrap,html,{source_attr}</html_src_attr>
                         <image_attr>align="center",width=95%</image_attr>
                         <diagram_attr>format=svg,align="center",width=95%</diagram_attr>

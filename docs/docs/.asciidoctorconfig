@@ -12,8 +12,12 @@
 
 :source_attr: linenums,indent=0,subs="attributes,verbatim"
 :java_src_attr: source%nowrap,java,{source_attr}
+:sql_src_attr: source%nowrap,sql,{source_attr}
+:docker_src_attr: source%nowrap,docker,{source_attr}
+:bash_src_attr: source%nowrap,bash,{source_attr}
+:yaml_src_attr: source%nowrap,yaml,{source_attr}
 
 :sourcedir: {asciidoctorconfigdir}/../src/main/java/com/diguage/kuafu
 :project_basedir: {asciidoctorconfigdir}/..
+:docker_basedir: {asciidoctorconfigdir}/../../docker/
 :src_core_dir: ../../kuafu-core/src/main/java/com/diguage/kuafu
-
