@@ -24,6 +24,9 @@ CREATE TABLE `account_tbl`
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB;
 
+INSERT INTO account_tbl(id, user_id, money)
+VALUES (1, 'diguage', 99999999);
+
 
 DROP TABLE IF EXISTS `undo_log`;
 CREATE TABLE `undo_log`

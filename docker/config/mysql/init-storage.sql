@@ -26,6 +26,9 @@ CREATE TABLE `storage_tbl`
     UNIQUE KEY (`commodity_code`)
 ) ENGINE=InnoDB;
 
+INSERT INTO storage_tbl(id, commodity_code, `count`)
+VALUES (1, 'j10', 666);
+
 
 DROP TABLE IF EXISTS `undo_log`;
 CREATE TABLE `undo_log`
