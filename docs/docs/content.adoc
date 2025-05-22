@@ -41,6 +41,13 @@
 . 幂等性
 . 补偿机制，例如反查
 
+
+[{sql_src_attr}]
+----
+-- https://stackoverflow.com/a/17968424/951836
+SHOW VARIABLES WHERE Variable_Name LIKE "%dir";
+----
+
 行内高亮： `java`。
 
 == 代码高亮

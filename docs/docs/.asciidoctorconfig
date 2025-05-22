@@ -8,7 +8,8 @@
 
 :icons: font
 
-:diagram_attr: format=svg,align="center",width=100%
+:image_attr: align="center",width=95%
+:diagram_attr: format=svg,align="center",width=95%
 
 :source_attr: linenums,indent=0,subs="attributes,verbatim"
 :java_src_attr: source%nowrap,java,{source_attr}

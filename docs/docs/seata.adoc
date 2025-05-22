@@ -1,0 +1,6 @@
+[#seata]
+= 基于 Seata 的分布式事务
+
+== 参考资料
+
+. https://github.com/apache/incubator-seata-samples[apache/incubator-seata-samples: Apache Seata(incubating) Samples for Java^]

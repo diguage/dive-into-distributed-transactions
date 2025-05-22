@@ -1,0 +1,9 @@
+[#atomikos]
+= 基于 Atomikos 的分布式事务
+
+== 参考消息
+
+. https://www.atomikos.com/Documentation/JtaProperties[JTA Properties | Documentation | Atomikos^]
+. https://www.atomikos.com/Documentation/SagasVsTwoPhaseCommitVsTCC[Sagas Vs Two Phase Commit Vs TCC^] -- Atomikos 也支持 TCC ？
+. https://www.atomikos.com/Documentation/AtomikosVsJBossNarayana[Atomikos Vs JBoss Transaction Manager (Narayana)^]
+. https://www.atomikos.com/Documentation/AtomikosVsBitronix[Atomikos Versus Bitronix^] -- Bitronix 已经好多年没有更新代码了！

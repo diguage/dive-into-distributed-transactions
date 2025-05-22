@@ -1,0 +1,7 @@
+[#narayana]
+= 基于 Narayana 的分布式事务
+
+== 参考资料
+
+. https://www.narayana.io/documentation/index.html[Documentation - Narayana^]
+. https://github.com/jbosstm/quickstart[jbosstm/quickstart: The quickstarts for the narayana project^]

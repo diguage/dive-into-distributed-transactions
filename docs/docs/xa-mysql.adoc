@@ -1,0 +1,12 @@
+[#xa-mysql]
+= MySQL 原生 XA 支持
+
+image::assets/images/xa-mysql-diag.jpg[{image_attr}]
+
+
+
+== 参考资料
+
+. https://dev.mysql.com/blog-archive/improvements-to-xa-support-in-mysql-5-7/[MySQL :: Improvements to XA Support in MySQL 5.7^] -- 很重要的一个文档！
+. https://dev.mysql.com/doc/refman/8.4/en/xa.html[MySQL :: MySQL 8.4 Reference Manual :: 15.3.8 XA Transactions^]
+. https://dev.mysql.com/worklog/task/?id=6860[MySQL :: WL#6860: Binlogging XA-prepared transaction^] -- 貌似 XA 的设计文档
