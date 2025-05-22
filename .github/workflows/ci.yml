@@ -208,7 +208,7 @@ jobs:
       - name: Generate index.html 🏠
         run: |
           cd docs/target/docs
-          echo '<ul><li><a href="./html/index.html" class="href">HTML</a></li><li><a href="./multipage/index.html" class="href">Multipage</a></li><li><a href="./pdf/index.pdf" class="href">PDF</a></li><li><a href="./epub/index.epub" class="href">ePub</a></li></ul>' > target/docs/index.html
+          echo '<ul><li><a href="./html/index.html" class="href">HTML</a></li><li><a href="./multipage/index.html" class="href">Multipage</a></li><li><a href="./pdf/index.pdf" class="href">PDF</a></li><li><a href="./epub/index.epub" class="href">ePub</a></li></ul>' > index.html
 
       # https://github.com/JamesIves/github-pages-deploy-action
       - name: Deploy 🚀
