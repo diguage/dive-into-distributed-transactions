@@ -1,4 +1,4 @@
-[#content]
+[#sect-content]
 = 正文部分
 
 . 2PC 只能是数据库之间的分布式协议；如果需要跨服务，则不能使用。
@@ -16,6 +16,11 @@
 ... 本地消息表，详见 https://queue.acm.org/detail.cfm?id=1394128[BASE: An Acid Alternative^]。坦白讲，这个方案很成熟，但是命名很混乱，还有很多别名：最终一致性，尽力交付等等
 ... MQ 内置的事务消息
 ... 最大交付？消息表+消息查询
+
+== 问题
+
+. Atomikos 等如何与 MyBATIS 等 ORM 框架搭配？
+. MySQL 原生 XA 支持如何与 MyBATIS 等 ORM 框架搭配？
 
 == 参考资料
 
@@ -48,130 +53,130 @@
 SHOW VARIABLES WHERE Variable_Name LIKE "%dir";
 ----
 
-行内高亮： `java`。
-
-== 代码高亮
-
-[{java_src_attr}]
-----
-// include::{src_core_dir}/anno/EnableKuafu.java[]
-----
-
-== Tab 页
-
-[tabs]
-====
-Tab A:: Contents of Tab A.
-
-Tab B::
-+
-Contents of Tab B.
-
-Tab C::
-+
---
-Contents of Tab C.
-
-Contains more than one block.
---
-
-Tab D::
-+
---
-[{java_src_attr}]
-----
-public class Test {
-    public static void main(String[] args) {
-        System.out.println("Hello");
-    }
-}
-----
---
-====
-
-=== 嵌套 Tab 页
-
-// https://github.com/asciidoctor/asciidoctor-tabs
-
-[tabs]
-======
-Tab A::
-+
-Selecting Tab A reveals a tabset with Tab Y and Tab Z.
-+
-[tabs]
-====
-Tab Y:: Contents of Tab Y, nested inside Tab A.
-Tab Z:: Contents of Tab Z, nested inside Tab A.
-====
-
-Tab B:: Just text.
-======
-
-== 图片
-
-=== 外部图片
-
-plantuml::assets/diagrams/observer.puml[{diagram_attr}]
-
-// 查看支持字体
-//[plantuml, {diagram_attr}]
-//....
-//@startuml
-//listfonts This is a test. 这是一个测试。這是一個測試。
-//@enduml
-//....
-
-=== 序列图
-
-seqdiag::assets/diagrams/seq.diag[{diagram_attr}]
-
-=== 文内图片
-
-[plantuml, {diagram_attr}]
-....
-@startuml
-title "**装饰模式**"
-
-abstract class Component {
-  + {abstract} operation() :void
-}
-note right: Component 是定义一个对象接口，\n可以给这些对象动态地添加职责。
-
-class ConcreteComponent {
-  + operation() :void
-}
-note "ConcreteComponent 是定义了\n一个具体的对象，也可以给这个\n对象添加一些职责。" as ccn
-ccn .. ConcreteComponent
-
-abstract class Decorator {
-  - component :Component
-  + {abstract} operation() :void
-}
-note "Decorator，装饰抽象类，\n继承了 Component，从外类\n来扩展 Component 的功能，\n但对于 Component 来说，\n是无需知道 Decorator 的存在的。" as dn
-Decorator .. dn
-
-class ConcreteDecoratorA {
-  + operation() :void
-}
-
-class ConcreteDecoratorB {
-  + operation() :void
-  - addBehavior() :void
-}
-note "ConcreteDecorator 就是具体的装饰对象，\n起到给 Component 添加职责的功能。" as cdn
-'cdn .. ConcreteDecoratorA
-'cdn .. ConcreteDecoratorB
-ConcreteDecoratorA .. cdn
-ConcreteDecoratorB .. cdn
-
-Decorator "-component" o-- Component
-
-Component <|-- ConcreteComponent
-Component <|-- Decorator
-Decorator <|-- ConcreteDecoratorA
-Decorator <|-- ConcreteDecoratorB
-
-footer D瓜哥 · https://www.diguage.com · 出品
-@enduml
-....
+// 行内高亮： `java`。
+//
+// == 代码高亮
+//
+// [{java_src_attr}]
+// ----
+// // include::{src_core_dir}/anno/EnableKuafu.java[]
+// ----
+//
+// == Tab 页
+//
+// [tabs]
+// ====
+// Tab A:: Contents of Tab A.
+//
+// Tab B::
+// +
+// Contents of Tab B.
+//
+// Tab C::
+// +
+// --
+// Contents of Tab C.
+//
+// Contains more than one block.
+// --
+//
+// Tab D::
+// +
+// --
+// [{java_src_attr}]
+// ----
+// public class Test {
+//     public static void main(String[] args) {
+//         System.out.println("Hello");
+//     }
+// }
+// ----
+// --
+// ====
+//
+// === 嵌套 Tab 页
+//
+// // https://github.com/asciidoctor/asciidoctor-tabs
+//
+// [tabs]
+// ======
+// Tab A::
+// +
+// Selecting Tab A reveals a tabset with Tab Y and Tab Z.
+// +
+// [tabs]
+// ====
+// Tab Y:: Contents of Tab Y, nested inside Tab A.
+// Tab Z:: Contents of Tab Z, nested inside Tab A.
+// ====
+//
+// Tab B:: Just text.
+// ======
+//
+// == 图片
+//
+// === 外部图片
+//
+// plantuml::assets/diagrams/observer.puml[{diagram_attr}]
+//
+// // 查看支持字体
+// //[plantuml, {diagram_attr}]
+// //....
+// //@startuml
+// //listfonts This is a test. 这是一个测试。這是一個測試。
+// //@enduml
+// //....
+//
+// === 序列图
+//
+// seqdiag::assets/diagrams/seq.diag[{diagram_attr}]
+//
+// === 文内图片
+//
+// [plantuml, {diagram_attr}]
+// ....
+// @startuml
+// title "**装饰模式**"
+//
+// abstract class Component {
+//   + {abstract} operation() :void
+// }
+// note right: Component 是定义一个对象接口，\n可以给这些对象动态地添加职责。
+//
+// class ConcreteComponent {
+//   + operation() :void
+// }
+// note "ConcreteComponent 是定义了\n一个具体的对象，也可以给这个\n对象添加一些职责。" as ccn
+// ccn .. ConcreteComponent
+//
+// abstract class Decorator {
+//   - component :Component
+//   + {abstract} operation() :void
+// }
+// note "Decorator，装饰抽象类，\n继承了 Component，从外类\n来扩展 Component 的功能，\n但对于 Component 来说，\n是无需知道 Decorator 的存在的。" as dn
+// Decorator .. dn
+//
+// class ConcreteDecoratorA {
+//   + operation() :void
+// }
+//
+// class ConcreteDecoratorB {
+//   + operation() :void
+//   - addBehavior() :void
+// }
+// note "ConcreteDecorator 就是具体的装饰对象，\n起到给 Component 添加职责的功能。" as cdn
+// 'cdn .. ConcreteDecoratorA
+// 'cdn .. ConcreteDecoratorB
+// ConcreteDecoratorA .. cdn
+// ConcreteDecoratorB .. cdn
+//
+// Decorator "-component" o-- Component
+//
+// Component <|-- ConcreteComponent
+// Component <|-- Decorator
+// Decorator <|-- ConcreteDecoratorA
+// Decorator <|-- ConcreteDecoratorB
+//
+// footer D瓜哥 · https://www.diguage.com · 出品
+// @enduml
+// ....
