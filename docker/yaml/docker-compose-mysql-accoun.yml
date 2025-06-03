@@ -1,0 +1,24 @@
+services:
+  # mysql -h127.0.0.1 -P3356 -uroot -p123456
+  # mysql -h127.0.0.1 -P3356 -uadmin_storage -p123456
+  # mysql -h172.6.3.2 -P3306 -uadmin_storage -p123456 ❎
+  mysql-storage:
+    container_name: mysql-storage
+    build:
+      context: .
+      dockerfile: images/mysql-storage.dockerfile
+    image: storage/mysql:8.4
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海时间
+    env_file:
+      - ./env/mysql.env
+    volumes:
+      - ./data/mysql/storage:/bitnami/mysql/data/
+    ports:
+      - "3356:3306"
+    healthcheck:
+      test: [ 'CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh' ]
+      interval: 15s  # 每 15 秒检查一次
+      timeout: 5s    # 请求超时时间为 5 秒
+      retries: 6     # 如果检查失败，最多重试 6 次
+      start_period: 60s  # 等待 60 秒后再开始进行 healthcheck

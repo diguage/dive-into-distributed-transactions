@@ -1,70 +1,152 @@
 [#environment]
 = 开发环境搭建
 
+为了方便项目整体迁移的便利性，所有的基础设施全部使用 Docker 来搞。也为了方便管理众多的环境配置，使用 Docker Compose 来做管理，这样一个配置文件，一行命令，就可以把全部所需的环境给拉起来。
+
 由于 Seata 包含了众多解决方案，也是一个重点描述对象。所以，全文的示例文档全部参考 Seata 的示例。整体流程是用户购买商品的业务逻辑：创建订单，扣除用户余额，扣除仓储数量。
 
-[{docker_src_attr}]
-----
-include::{docker_basedir}/images/mysql-account.dockerfile[]
-----
+== 搭建数据库
 
+MySQL 的镜像支持使用 SQL 语句文件来初始化，只需要把相关文件放在指定目录下，在第一次启动时或者在每次启动时，都会执行目录下的 SQL 脚本文件。
+
+这里选用 https://hub.docker.com/r/bitnami/mysql[bitnami/mysql^] 镜像作为基础镜像。根据其文档，有两个目录满足上述需求：
+
+. `/docker-entrypoint-initdb.d` -- 只有容器在第一次启动时才执行。
+. `/docker-entrypoint-startdb.d` -- 在容器每次启动时，都会执行。
+
+所以，还需要把初始化脚本挂载到 `/docker-entrypoint-initdb.d` 目录下就可以完成初始化工作。
+
+=== 账户数据库
+
+对于账户数据库，需要完成如下三个操作：
+
+. 创建相关管理账户 `admin_account`，并完成对数据库 `db_account` 的授权。
+. 创建账户数据库 `db_account`。
+. 在 `db_account` 数据库中，创建相关的表。
+
+在上述操作转换对应的 SQL 语句写在 `docker/config/mysql/init-account.sql` 文件中，内容如下：
+
+.`docker/config/mysql/init-account.sql`
 [{sql_src_attr}]
 ----
 include::{docker_basedir}/config/mysql/init-account.sql[]
 ----
 
-[{yaml_src_attr}]
+基础镜像选择 https://hub.docker.com/r/bitnami/mysql[bitnami/mysql^]，在此之上，我们需要挂载上述的初始化 SQL 文件，按照 Dockerfile 的语法，将其写入到 `docker/images/mysql-account.dockerfile`，内容如下：
+
+.`docker/images/mysql-account.dockerfile`
+[{docker_src_attr}]
 ----
-include::{docker_basedir}/docker-compose.yml[tag=mysql-storage]
+include::{docker_basedir}/images/mysql-account.dockerfile[]
 ----
 
+除此之外，还需要初始化 MySQL 的 `root` 账户密码，为了方便复用，将其抽取到 `docker/env/mysql.env` 文件中，内容如下：
 
 [{bash_src_attr}]
 ----
 include::{docker_basedir}/env/mysql.env[]
 ----
 
-[{docker_src_attr}]
+由于使用 Docker Compose，所以，最后在 `docker-compose.yml` 中，使用上述 Dockerfile 来启动数据库服务：
+
+[{yaml_src_attr}]
 ----
-include::{docker_basedir}/images/mysql-order.dockerfile[]
+include::{docker_basedir}/yaml/docker-compose-mysql-accoun.yml[]
 ----
 
+经过上述配置，在 `docker-compose.yml` 同一目录下，执行 `docker compose up` 命令就可以启动该数据库了。
+
+
+=== 订单数据库
+
+订单初始化文件：
+
+.`docker/config/mysql/init-order.sql`
 [{sql_src_attr}]
 ----
 include::{docker_basedir}/config/mysql/init-order.sql[]
 ----
 
+Dockerfile 配置文件：
+
+.`docker/images/mysql-order.dockerfile`
 [{docker_src_attr}]
 ----
-include::{docker_basedir}/images/mysql-storage.dockerfile[]
+include::{docker_basedir}/images/mysql-order.dockerfile[]
 ----
+
+Docker Compose 文件：
+
+[{yaml_src_attr}]
+----
+include::{docker_basedir}/yaml/docker-compose-mysql-order.yml[]
+----
+
+=== 库存数据库
+
+库存初始化文件：
 
 [{sql_src_attr}]
 ----
 include::{docker_basedir}/config/mysql/init-storage.sql[]
 ----
 
+Dockerfile 配置文件：
+
 [{docker_src_attr}]
 ----
-include::{docker_basedir}/images/mysql-nacos.dockerfile[]
+include::{docker_basedir}/images/mysql-storage.dockerfile[]
 ----
 
+Docker Compose 文件：
+
+[{yaml_src_attr}]
+----
+include::{docker_basedir}/yaml/docker-compose-mysql-storage.yml[]
+----
+
+=== 搭建 NACOS
+
+NACOS 是目前 Dubbo 一个最重要的注册中心和配置中心，这里选择 NACOS 作为示例的注册中心和配置中心。NACOS 的搭建主要分为两边：
+
+. 搭建所需的数据库。这个过程和上面的过程一样。
+. 准备 NACOS 运行所需的配置文件，最后启动即可。
+
+==== 数据库
+
+NACOS 初始化脚本从 https://github.com/alibaba/nacos/blob/3.0.0/distribution/conf/mysql-schema.sql[nacos/distribution/conf/mysql-schema.sql at 3.0.0^] 获取。需要根据 NACOS 的版本来选择对应的初始化脚本文件。
+
+.`docker/config/nacos/nacos-schema.sql`
 [{sql_src_attr}]
 ----
 include::{docker_basedir}/config/nacos/nacos-schema.sql[]
 ----
 
+Dockerfile 配置文件：
+
+.`docker/images/mysql-nacos.dockerfile`
+[{docker_src_attr}]
+----
+include::{docker_basedir}/images/mysql-nacos.dockerfile[]
+----
+
+NACOS 的配置文件：
+
+.`docker/env/nacos.env`
 [{bash_src_attr}]
 ----
 include::{docker_basedir}/env/nacos.env[]
 ----
 
+.`docker/config/nacos/application.properties`
 [{bash_src_attr}]
 ----
 include::{docker_basedir}/config/nacos/application.properties[]
 ----
 
+完整的 `docker-compose.yml` 文件：
 
+.`docker/docker-compose.yml`
 [{yaml_src_attr}]
 ----
 include::{docker_basedir}/docker-compose.yml[]
