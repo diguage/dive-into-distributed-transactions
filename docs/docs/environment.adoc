@@ -151,3 +151,13 @@ include::{docker_basedir}/config/nacos/application.properties[]
 ----
 include::{docker_basedir}/docker-compose.yml[]
 ----
+
+== 清理环境
+
+刚刚开始搭建环境时，经常会因为有些文件和数据没有得到及时清理，影响到正常的改动。所以，可以写一个脚本来完成全部清理工作：
+
+.`docker/clean.sh`
+[{bash_src_attr}]
+----
+include::{docker_basedir}/clean.sh[]
+----
