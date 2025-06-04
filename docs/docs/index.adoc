@@ -16,6 +16,8 @@ include::preface.adoc[leveloffset=+1]
 
 include::environment.adoc[leveloffset=+1]
 
+include::cap-theorem.adoc[leveloffset=+1]
+
 include::xa-mysql.adoc[leveloffset=+1]
 
 include::atomikos.adoc[leveloffset=+1]

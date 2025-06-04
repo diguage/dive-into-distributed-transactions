@@ -1,0 +1,26 @@
+[#cap-theorem]
+= CAP 理论
+
+image::assets/images/cap.png[{image_attr}]
+
+TIP: 图片可以再丰富一下，把各种协议的代表产品写出来。例如像下图：
+
+image::assets/images/cap-2.png[{image_attr}]
+
+
+image::assets/images/cap-theorem-2.png[{image_attr}]
+
+image::assets/images/cap-theorem.png[{image_attr}]
+
+image::assets/images/cap-use-cases.png[{image_attr}]
+
+image::assets/images/cap-theorem-system-approaches.png[{image_attr}]
+
+image::assets/images/cap-pacelc-acid-base.png[{image_attr}]
+
+== 参考资料
+
+. https://factor-bytes.com/2023/07/22/understanding-cap-theorem-balancing-consistency-availability-and-partition-tolerance-in-distributed-systems/[Understanding CAP Theorem: Balancing Consistency, Availability, and Partition Tolerance in Distributed Systems – FactorBytes^]
+. https://blog.det.life/understanding-the-cap-theorem-implications-for-distributed-databases-675f5a8aaf82[Understanding the CAP Theorem: Implications for Distributed Databases | by Anto Semeraro | Data Engineer Things^]
+. https://blog.bytebytego.com/p/cap-pacelc-acid-base-essential-concepts[CAP, PACELC, ACID, BASE - Essential Concepts for an Architect’s Toolkit^]
+. https://www.scylladb.com/glossary/pacelc-theorem/[What is the PACELC Theorem? Definition & FAQs | ScyllaDB^]
