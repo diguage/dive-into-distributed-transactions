@@ -296,5 +296,5 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages # The branch the action should deploy to.
-          folder: docs/target/docs # The folder the action should deploy.
+          folder: docs/target/docs/multipage # The folder the action should deploy.
           single-commit: true
