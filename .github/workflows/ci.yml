@@ -152,18 +152,20 @@ jobs:
                   'https://github.com/diguage/open-fonts/releases/download/latest/SourceHanSansSC-Medium.otf' \
                   'https://github.com/diguage/open-fonts/releases/download/latest/SourceHanSansSC-Heavy.otf' \
                   'https://github.com/diguage/open-fonts/releases/download/latest/Symbola.ttf')
+          echo -e "$(date +%T) start to download fonts...\n"
           for font in "${fonts[@]}"
           do
             name=`echo $font | awk -F'/' '{print $NF}'`
             if [ -f "$name" ]; then
               echo "$name exists."
             else
-            until wget $font
-            do
-              echo "Try to download $name again..."
-            done
+              wget -c --tries=5 --retry-connrefused --waitretry=5 --timeout=10 $font 1>/dev/null 2>&1 &
             fi
           done
+          
+          wait
+          echo -e "$(date +%T) finish downloading fonts...\n"
+          ls -lh
 
       - name: Check font 🔍
         run: |
