@@ -29,6 +29,86 @@ jobs:
           distribution: 'corretto'
           cache: 'maven'
 
+      # https://github.com/marketplace/actions/docker-setup-docker
+      - name: Setup Docker 🐳
+        uses: docker/setup-docker-action@v4
+
+      - name: Add Watermark to Images 🎖
+        run: |
+          docker pull dpokidov/imagemagick
+          
+          cd docs/docs/assets
+          wget https://github.com/diguage/open-fonts/releases/download/latest/SourceCodePro-Semibold.otf
+          BASEDIR=$( pwd )/
+          
+          # 异步加水印
+          # JPG
+          echo " "
+          echo -e "\n\n$(date +%T) start to add watermark to JPG"
+          find . -type f -name "*.jpg" | grep -v "wx-jikerizhi-qrcode.jpg\|wx-jikerizhi.jpg\|wxpay.jpg" | sed "s/.jpg$//g" | xargs -I {} docker run --rm -v ${BASEDIR}:/imgs dpokidov/imagemagick -compress JPEG2000 -strip -thumbnail "1200x>" -quality 75 -font /imgs/SourceCodePro-Semibold.otf -pointsize 30 -gravity southeast -fill "#DE282A" -draw 'text 15,18 "https://www.diguage.com"' /imgs/{}.jpg /imgs/{}-mark.jpg 1>/dev/null 2>&1 &
+          
+          wait
+          echo -e "$(date +%T) finish adding watermark to JPG...\n\n"
+          echo " "
+          find . -type f -name "*.jpg" | xargs ls -l -h
+          echo " "
+          echo -e "\n\n$(date +%T) --start to replace JPG----------------------"
+          for f in `find . -type f -name "*-mark.jpg"`;
+          do
+            name=`echo $f | sed "s/-mark.jpg//g"`
+            echo "replace ${f} to ${name}.jpeg"
+            rm -rf "${name}.jpg"
+            mv "${f}" "${name}.jpg"
+          done
+          echo -e "$(date +%T) --finish replacing JPG----------------------\n\n"
+          echo " "
+          find . -type f -name "*.jpg" | xargs ls -l -h
+          
+          # JPEG
+          echo " "
+          echo -e "\n\n$(date +%T) start to add watermark to JPEG"
+          find . -type f -name "*.jpeg" | sed "s/.jpeg$//g" | xargs -I {} docker run --rm -v ${BASEDIR}:/imgs dpokidov/imagemagick -compress JPEG2000 -strip -thumbnail "1200x>" -quality 75 -font /imgs/SourceCodePro-Semibold.otf -pointsize 30 -gravity southeast -fill "#DE282A" -draw 'text 15,18 "https://www.diguage.com"' /imgs/{}.jpeg /imgs/{}-mark.jpeg 1>/dev/null 2>&1 &
+          
+          wait
+          echo -e "$(date +%T) finish adding watermark to JPEG...\n\n"
+          echo " "
+          find . -type f -name "*.jpeg" | xargs ls -l -h
+          echo " "
+          echo -e "\n\n$(date +%T) --start to replace JPEG----------------------"
+          for f in `find . -type f -name "*-mark.jpeg"`;
+          do
+            name=`echo $f | sed "s/-mark.jpeg//g"`
+            echo "replace ${f} to ${name}.jpeg"
+            rm -rf "${name}.jpeg"
+            mv "${f}" "${name}.jpeg"
+          done
+          echo -e "$(date +%T) --finish replacing JPEG----------------------\n\n"
+          echo " "
+          find . -type f -name "*.jpeg" | xargs ls -l -h
+
+      #          # PNG
+      #          echo " "
+      #          echo -e "\n\n$(date +%T) start to add watermark to PNG"
+      #          find . -type f -name "*.png" | grep -v "alipay.png\|wxpay.png" | sed "s/.png$//g" | xargs -I {} docker run --rm -v ${BASEDIR}:/imgs dpokidov/imagemagick -strip -resize 1200x -define png:compression-level=9 -define png:exclude-chunk=all -define png:filter-type=1 -font /imgs/SourceCodePro-Semibold.otf -pointsize 30 -gravity southeast -fill "#DE282A" -draw 'text 15,18 "https://www.diguage.com"' /imgs/{}.png /imgs/{}-mark.png 1>/dev/null 2>&1 &
+      #
+      #          wait
+      #          echo -e "$(date +%T) finish adding watermark to PNG...\n\n"
+      #          echo " "
+      #          find . -type f -name "*.png" | xargs ls -l -h
+      #          echo " "
+      #          echo -e "\n\n$(date +%T) --start to replace PNG----------------------"
+      #          for f in `find . -type f -name "*-mark.png"`;
+      #          do
+      #            name=`echo $f | sed "s/-mark.png//g"`
+      #            echo "replace ${f} to ${name}.png"
+      #            rm -rf "${name}.png"
+      #            mv "${f}" "${name}.png"
+      #          done
+      #          echo -e "$(date +%T) --finish replacing PNG----------------------\n\n"
+      #          echo " "
+      #          find . -type f -name "*.png" | xargs ls -l -h
+
+
       - name: Install Graphviz 🐰
         run: |
           sudo apt update -y -m
