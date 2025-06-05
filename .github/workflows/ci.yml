@@ -108,28 +108,6 @@ jobs:
       #          echo " "
       #          find . -type f -name "*.png" | xargs ls -l -h
 
-
-      - name: Install Graphviz 🐰
-        run: |
-          sudo apt update -y -m
-          sudo apt install -y python3-pip
-          # https://graphviz.org/
-          sudo apt install -y graphviz
-          # http://blockdiag.com/en/seqdiag/index.html
-          pip3 install seqdiag
-          # http://blockdiag.com/en/blockdiag/index.html
-          pip3 install blockdiag
-          # http://blockdiag.com/en/actdiag/index.html
-          pip3 install actdiag
-          # http://blockdiag.com/en/nwdiag/index.html
-          pip3 install nwdiag
-          # https://github.com/Deep-Symmetry/bytefield-svg
-          npm install -g bytefield-svg
-          # https://github.com/gtudan/bpmn-js-cmd
-          npm install -g bpmn-js-cmd
-          # https://plantuml.com/zh/
-          sudo apt -y install plantuml
-
       - name: Install font 🎃
         run: |
           mkdir $HOME/.fonts
@@ -176,6 +154,27 @@ jobs:
           ls -lh $HOME/.fonts 
           fc-list
           cat $HOME/.blockdiagrc
+
+      - name: Install Graphviz 🐰
+        run: |
+          sudo apt update -y -m
+          sudo apt install -y python3-pip
+          # https://graphviz.org/
+          sudo apt install -y graphviz
+          # http://blockdiag.com/en/seqdiag/index.html
+          pip3 install seqdiag
+          # http://blockdiag.com/en/blockdiag/index.html
+          pip3 install blockdiag
+          # http://blockdiag.com/en/actdiag/index.html
+          pip3 install actdiag
+          # http://blockdiag.com/en/nwdiag/index.html
+          pip3 install nwdiag
+          # https://github.com/Deep-Symmetry/bytefield-svg
+          npm install -g bytefield-svg
+          # https://github.com/gtudan/bpmn-js-cmd
+          npm install -g bpmn-js-cmd
+          # https://plantuml.com/zh/
+          sudo apt -y install plantuml
 
       - name: Build 🏗
         run: mvn package
