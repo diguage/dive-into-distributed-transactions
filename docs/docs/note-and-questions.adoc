@@ -113,11 +113,11 @@ SHOW VARIABLES WHERE Variable_Name LIKE "%dir";
 // Tab B:: Just text.
 // ======
 //
-// == 图片
+== 图片
 //
 // === 外部图片
 //
-// plantuml::assets/diagrams/observer.puml[{diagram_attr}]
+plantuml::{diagram_dir}/observer.puml[{diagram_attr}]
 //
 // // 查看支持字体
 // //[plantuml, {diagram_attr}]
@@ -129,7 +129,7 @@ SHOW VARIABLES WHERE Variable_Name LIKE "%dir";
 //
 // === 序列图
 //
-// seqdiag::assets/diagrams/seq.diag[{diagram_attr}]
+// seqdiag::{diagram_dir}/seq.diag[{diagram_attr}]
 //
 // === 文内图片
 //

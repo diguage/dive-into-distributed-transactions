@@ -37,6 +37,7 @@
         <asciidoctor-multipage.version>0.0.19</asciidoctor-multipage.version>
         <asciidoctor-tabs.version>1.0.0.beta.6</asciidoctor-tabs.version>
         <rouge.version>4.3.0</rouge.version>
+        <asciidoctor-kroki.version>0.10.0</asciidoctor-kroki.version>
         <asciidoclet.version>2.0.0</asciidoclet.version>
         <asciidoctor-maven-plugin.version>3.2.0</asciidoctor-maven-plugin.version>
         <mavengem-wagon.version>2.0.2</mavengem-wagon.version>
