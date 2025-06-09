@@ -1,6 +1,9 @@
 [#other-solution]
 = 其他解决方案
 
+年久失修的一些开源解决方案。
+
+. https://github.com/scalar-labs/btm[Bitronix Transaction Manager (BTM): JTA Transaction Manager^]
 . https://www.dtm.pub/[DTM 开源项目文档^]
 . https://github.com/dromara/hmily[dromara/hmily: Distributed transaction solutions^]
 
