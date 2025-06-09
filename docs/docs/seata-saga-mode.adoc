@@ -1,6 +1,2 @@
 [#seata-saga-mode]
 = Seata SAGA 模式
-
-
-
-== 参考资料

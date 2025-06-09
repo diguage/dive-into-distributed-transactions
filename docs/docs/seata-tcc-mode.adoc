@@ -1,6 +1,2 @@
 [#seata-tcc-mode]
 = Seata TCC 模式
-
-
-
-== 参考资料

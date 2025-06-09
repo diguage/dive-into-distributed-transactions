@@ -1,6 +1,2 @@
 [#seata-at-mode]
 = Seata AT 模式
-
-
-
-== 参考资料
