@@ -1,7 +1,14 @@
 [#narayana]
-= 基于 Narayana 的分布式事务
+= 基于 Narayana 的分布式事务解决方案
+
+
+include::narayana-jta.adoc[leveloffset=+1]
+
+include::narayana-jts.adoc[leveloffset=+1]
+
 
 == 参考资料
 
 . https://www.narayana.io/documentation/index.html[Documentation - Narayana^]
 . https://github.com/jbosstm/quickstart[jbosstm/quickstart: The quickstarts for the narayana project^]
+. https://docs.jboss.org/jbosstm/5.0.2.Final/guides/narayana-jts-development_guide/#d0e4040[Narayana JTS Development Guide^]

@@ -1,5 +1,5 @@
-[#sect-content]
-= 正文部分
+[#note-and-questions]
+= 随笔及问题
 
 . 2PC 只能是数据库之间的分布式协议；如果需要跨服务，则不能使用。
 . 同样，JTA(Java Transaction API) 也是数据库层面的分布式事务协议。？可用实现有 Atomikos 和 Narayana。JDBC 事务局限为一个数据库连接，而 JTA 事务可以有多个参与者。JMS 也可以是参与者。

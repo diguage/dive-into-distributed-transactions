@@ -18,6 +18,8 @@ include::environment.adoc[leveloffset=+1]
 
 include::cap-theorem.adoc[leveloffset=+1]
 
+include::base-transaction.adoc[leveloffset=+1]
+
 include::xa-mysql.adoc[leveloffset=+1]
 
 include::atomikos.adoc[leveloffset=+1]
@@ -26,7 +28,7 @@ include::narayana.adoc[leveloffset=+1]
 
 include::seata.adoc[leveloffset=+1]
 
-include::content.adoc[leveloffset=+1]
+include::note-and-questions.adoc[leveloffset=+1]
 
 include::license.adoc[leveloffset=+1]
 

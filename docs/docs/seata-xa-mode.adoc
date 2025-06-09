@@ -1,0 +1,6 @@
+[#seata-xa-mode]
+= Seata XA 模式
+
+
+
+== 参考资料
