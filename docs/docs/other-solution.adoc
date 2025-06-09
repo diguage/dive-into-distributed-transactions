@@ -1,0 +1,10 @@
+[#other-solution]
+= 其他解决方案
+
+. https://www.dtm.pub/[DTM 开源项目文档^]
+. https://github.com/dromara/hmily[dromara/hmily: Distributed transaction solutions^]
+
+== 参考资料
+
+. https://zhuanlan.zhihu.com/p/457868921[分布式事务之可靠消息最终一致性、最大努力通知 - 知乎^]
+. https://medium.com/@dongfuye/the-seven-most-classic-solutions-for-distributed-transaction-management-3f915f331e15[The Seven Most Classic Patterns for Distributed Transactions^]

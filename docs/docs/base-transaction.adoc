@@ -1,2 +1,8 @@
 [#base-transaction]
 = 柔性事务
+
+== 参考资料
+
+. https://zhuanlan.zhihu.com/p/183753774[面试必问：分布式事务六种解决方案^]
+. https://xiaomi-info.github.io/2020/01/02/distributed-transaction/[分布式事务，这一篇就够了^]
+. https://icyfenix.cn/architect-perspective/general-architecture/transaction/distributed.html[分布式事务^]
