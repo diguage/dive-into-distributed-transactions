@@ -203,3 +203,85 @@ CREATE TABLE `permissions`
     UNIQUE INDEX `uk_role_permission` (`role`,`resource`,`action`) USING BTREE
 );
 
+/* 源文件：https://github.com/alibaba/nacos/blob/3.0.0/distribution/conf/mysql-schema.sql 到此为止*/
+
+/* 以下导入 Seata 配置信息（含 NACOS管理员信息） */
+
+-- MySQL dump 10.13  Distrib 8.4.5, for macos14.7 (x86_64)
+--
+-- Host: 127.0.0.1    Database: db_nacos
+-- ------------------------------------------------------
+-- Server version	8.4.5
+
+--
+-- Dumping data for table `config_info`
+--
+
+LOCK TABLES `config_info` WRITE;
+/*!40000 ALTER TABLE `config_info` DISABLE KEYS */;
+INSERT INTO `config_info` VALUES (1,'seataServer.properties','SEATA_GROUP','store.mode=db\n#-----db-----\n# 修改成 hikari 报错\nstore.db.datasource=druid\nstore.db.dbType=mysql\n# 需要根据mysql的版本调整driverClassName\n# mysql8及以上版本对应的driver：com.mysql.cj.jdbc.Driver\n# mysql8以下版本的driver：com.mysql.jdbc.Driver\nstore.db.driverClassName=com.mysql.cj.jdbc.Driver\nstore.db.url=jdbc:mysql://mysql-seata:3306/db_seata?useUnicode=true&characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true\nstore.db.user=admin_seata\nstore.db.password=123456\n# 数据库初始连接数\nstore.db.minConn=1\n# 数据库最大连接数\nstore.db.maxConn=20\n# 获取连接时最大等待时间 默认5000，单位毫秒\nstore.db.maxWait=5000\n# 全局事务表名 默认global_table\nstore.db.globalTable=global_table\n# 分支事务表名 默认branch_table\nstore.db.branchTable=branch_table\n# 全局锁表名 默认lock_table\nstore.db.lockTable=lock_table\n# 查询全局事务一次的最大条数 默认100\nstore.db.queryLimit=100\n\n\n# undo保留天数 默认7天,log_status=1（附录3）和未正常清理的undo\nserver.undo.logSaveDays=7\n# undo清理线程间隔时间 默认86400000，单位毫秒\nserver.undo.logDeletePeriod=86400000\n# 二阶段提交重试超时时长 单位ms,s,m,h,d,对应毫秒,秒,分,小时,天,默认毫秒。默认值-1表示无限重试\n# 公式: timeout>=now-globalTransactionBeginTime,true表示超时则不再重试\n# 注: 达到超时时间后将不会做任何重试,有数据不一致风险,除非业务自行可校准数据,否者慎用\nserver.maxCommitRetryTimeout=-1\n# 二阶段回滚重试超时时长\nserver.maxRollbackRetryTimeout=-1\n# 二阶段提交未完成状态全局事务重试提交线程间隔时间 默认1000，单位毫秒\nserver.recovery.committingRetryPeriod=1000\n# 二阶段异步提交状态重试提交线程间隔时间 默认1000，单位毫秒\nserver.recovery.asynCommittingRetryPeriod=1000\n# 二阶段回滚状态重试回滚线程间隔时间  默认1000，单位毫秒\nserver.recovery.rollbackingRetryPeriod=1000\n# 超时状态检测重试线程间隔时间 默认1000，单位毫秒，检测出超时将全局事务置入回滚会话管理器\nserver.recovery.timeoutRetryPeriod=1000','d3d705aa4ab285e6d72f6646abc21efa','2025-06-09 14:16:56','2025-06-10 00:10:53','nacos','192.168.65.1','','seata-server','',NULL,NULL,'properties',NULL,'');
+/*!40000 ALTER TABLE `config_info` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `group_capacity`
+--
+
+LOCK TABLES `group_capacity` WRITE;
+/*!40000 ALTER TABLE `group_capacity` DISABLE KEYS */;
+INSERT INTO `group_capacity` VALUES (1,'',0,1,0,0,0,0,'2025-06-09 10:15:15','2025-06-10 07:49:54');
+/*!40000 ALTER TABLE `group_capacity` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+--
+-- Dumping data for table `permissions`
+--
+
+LOCK TABLES `permissions` WRITE;
+/*!40000 ALTER TABLE `permissions` DISABLE KEYS */;
+INSERT INTO `permissions` VALUES ('ROLE_SEATA','seata-server:*:*','rw');
+/*!40000 ALTER TABLE `permissions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `roles`
+--
+
+LOCK TABLES `roles` WRITE;
+/*!40000 ALTER TABLE `roles` DISABLE KEYS */;
+INSERT INTO `roles` VALUES ('nacos','ROLE_ADMIN'),('seata','ROLE_SEATA');
+/*!40000 ALTER TABLE `roles` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `tenant_capacity`
+--
+
+LOCK TABLES `tenant_capacity` WRITE;
+/*!40000 ALTER TABLE `tenant_capacity` DISABLE KEYS */;
+INSERT INTO `tenant_capacity` VALUES (1,'seata-server',0,1,0,0,0,0,'2025-06-09 10:15:15','2025-06-10 07:49:54');
+/*!40000 ALTER TABLE `tenant_capacity` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `tenant_info`
+--
+
+LOCK TABLES `tenant_info` WRITE;
+/*!40000 ALTER TABLE `tenant_info` DISABLE KEYS */;
+INSERT INTO `tenant_info` VALUES (1,'2','nacos-default-mcp','nacos-default-mcp','Nacos default AI MCP module.','nacos',1749434747652,1749434747652),(2,'1','seata-server','seata-server','seata-server','nacos',1749435059010,1749435059010);
+/*!40000 ALTER TABLE `tenant_info` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `users`
+--
+
+LOCK TABLES `users` WRITE;
+/*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES ('nacos','$2a$10$OLjDASIyFwZt.CWEZvHpUOhIqns6okVnPoeNnkD3dREa2PkIOX8NW',1),('seata','$2a$10$GaGtP8KW4jNZrRznKqR04.opS2792ECeYR9fqy9EoZV1iXK12ydDy',1);
+/*!40000 ALTER TABLE `users` ENABLE KEYS */;
+UNLOCK TABLES;
+
+/* Seata 配置信息到此为止 */

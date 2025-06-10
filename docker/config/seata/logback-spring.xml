@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 日志样式 -->
+    <property name="log.pattern"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %yellow(%logger{70}).%cyan(%method)@[%red(%line)] - %msg%n"/>
+
+    <!-- 将 JUL 的日志级别映射为 logback 的日志级别 -->
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder charset="UTF-8">
+            <pattern>${log.pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="sun.net" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+    <logger name="org.apache.coyote" level="WARN"/>
+    <logger name="org.apache.tomcat" level="WARN"/>
+    <logger name="org.apache.catalina" level="WARN"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="_org.springframework" level="WARN"/>
+    <!-- 查看 Spring 及 Properties 配置文件加载情况 -->
+    <logger name="org.springframework.beans.factory.xml.XmlBeanDefinitionReader" level="TRACE"/>
+    <logger name="org.springframework.context.support.PropertySourcesPlaceholderConfigurer" level="TRACE"/>
+    <logger name="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" level="TRACE"/>
+
+    <root level="DEBUG">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
