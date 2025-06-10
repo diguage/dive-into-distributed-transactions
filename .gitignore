@@ -183,6 +183,7 @@ docs/cfg/gems
 *.otf
 
 docker/data/mysql/*
+docker/data/kafka/*
 
 .env
 

@@ -15,6 +15,7 @@
         </encoder>
     </appender>
 
+    <logger name="com.sun" level="WARN"/>
     <logger name="sun.net" level="WARN"/>
     <logger name="io.netty" level="WARN"/>
     <logger name="org.apache.coyote" level="WARN"/>
@@ -26,6 +27,13 @@
     <logger name="org.springframework.beans.factory.xml.XmlBeanDefinitionReader" level="TRACE"/>
     <logger name="org.springframework.context.support.PropertySourcesPlaceholderConfigurer" level="TRACE"/>
     <logger name="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" level="TRACE"/>
+
+    <logger name="org.apache.seata.core.rpc.netty" level="WARN"/>
+    <logger name="org.apache.seata.core.rpc.processor" level="WARN"/>
+    <!-- 查看分布式事务的交互日志 -->
+    <logger name="org.apache.seata.core.rpc.netty.AbstractNettyRemoting" level="DEBUG"/>
+    <logger name="org.apache.seata.server.session.AbstractSessionManager" level="DEBUG"/>
+    <logger name="org.apache.seata.core.rpc.processor.server.BatchLogHandler" level="DEBUG"/>
 
     <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>

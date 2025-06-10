@@ -29,6 +29,17 @@ CREATE TABLE `storage_tbl`
 INSERT INTO storage_tbl(id, commodity_code, `count`)
 VALUES (1, 'j10', 666);
 
+CREATE TABLE `stock_tbl`
+(
+    `id`             int(11) NOT NULL AUTO_INCREMENT,
+    `commodity_code` varchar(255) DEFAULT NULL,
+    `count`          int(11) DEFAULT '0',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `commodity_code` (`commodity_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=1;
+
+INSERT INTO stock_tbl(id, commodity_code, `count`)
+VALUES (1, 'j10', 666);
 
 DROP TABLE IF EXISTS `undo_log`;
 CREATE TABLE `undo_log`

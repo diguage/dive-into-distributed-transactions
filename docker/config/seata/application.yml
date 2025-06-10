@@ -9,12 +9,22 @@ logging:
   config: classpath:logback-spring.xml
   file:
     path: ${user.home}/logs/seata
-#  extend:
+  extend:
 #    logstash-appender:
 #      destination: 127.0.0.1:4560
-#    kafka-appender:
-#      bootstrap-servers: 127.0.0.1:9092
-#      topic: logback_to_logstash
+    # TODO Kafka 没有日志
+    kafka-appender:
+      # off by default
+      enabled: true
+      bootstrap-servers: kafka-server:9092
+      topic: log-seata
+      producer:
+        acks: 0
+        linger-ms: 1000
+        max-block-ms: 0
+    metric-appender:
+      # off by default
+      enabled: true
 
 console:
   user:
@@ -22,6 +32,7 @@ console:
     password: seata
 
 seata:
+  # 看日志，还有 lock 存储，这个改怎么配置？存哪里？
   config:
     # support: nacos, consul, apollo, zk, etcd3
 #    type: file
@@ -32,7 +43,7 @@ seata:
       group: SEATA_GROUP
       username: seata
       password: seata
-      data-id: seataServer.properties
+#      data-id: seataServer.properties
   registry:
     # support: nacos, eureka, redis, zk, consul, etcd3, sofa, file
 #    type: file
@@ -62,9 +73,15 @@ seata:
 #      url: jdbc:mysql://mysql-seata:3306/db_seata?useUnicode=true&characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
 #      user: admin_seata
 #      password: 123456
+  # TODO 访问 http://127.0.0.1:9898/metrics 看不到监控数据
+  metrics:
+    enabled: true
+    registry-type: compact
+    exporter-list: prometheus
+    exporter-prometheus-port: 9898
 
-  #  server:
-  #    service-port: 8091 #If not configured, the default is '${server.port} + 1000'
+#  server:
+#    service-port: 8091 #If not configured, the default is '${server.port} + 1000'
   security:
     secretKey: SeataSecretKey0c382ef121d778043159209298fd40bf3850a017
     tokenValidityInMilliseconds: 1800000
