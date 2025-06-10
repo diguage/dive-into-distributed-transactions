@@ -16,4 +16,6 @@ docker image rm -f account/mysql:8.4
 
 docker image rm -f nacos/mysql:8.4
 
+docker image rm -f seata/mysql:8.4
+
 rm -rf $BASEDIR/data/mysql/*

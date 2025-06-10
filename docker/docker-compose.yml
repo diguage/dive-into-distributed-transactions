@@ -1,7 +1,8 @@
-# tag::mysql-storage[]
+# D瓜哥 · https://www.diguage.com
 services:
   # mysql -h127.0.0.1 -P3356 -uroot -p123456
   # mysql -h127.0.0.1 -P3356 -uadmin_storage -p123456
+  # mysql -h172.6.3.2 -P3306 -uadmin_storage -p123456 ❎
   mysql-storage:
     container_name: mysql-storage
     build:
@@ -22,10 +23,13 @@ services:
       timeout: 5s    # 请求超时时间为 5 秒
       retries: 6     # 如果检查失败，最多重试 6 次
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
-# end::mysql-storage[]
+#    networks:
+#      transactions:
+#        ipv4_address: 172.6.3.2
 
   # mysql -h127.0.0.1 -P3366 -uroot -p123456
   # mysql -h127.0.0.1 -P3366 -uadmin_order -p123456
+  # mysql -h172.6.3.3 -P3306 -uadmin_order -p123456
   mysql-order:
     container_name: mysql-order
     build:
@@ -46,9 +50,13 @@ services:
       timeout: 5s    # 请求超时时间为 5 秒
       retries: 6     # 如果检查失败，最多重试 6 次
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
+#    networks:
+#      transactions:
+#        ipv4_address: 172.6.3.3
 
   # mysql -h127.0.0.1 -P3376 -uroot -p123456
   # mysql -h127.0.0.1 -P3376 -uadmin_account -p123456
+  # mysql -h172.6.3.4 -P3306 -uadmin_account -p123456 ❎
   mysql-account:
     container_name: mysql-account
     build:
@@ -69,9 +77,13 @@ services:
       timeout: 5s    # 请求超时时间为 5 秒
       retries: 6     # 如果检查失败，最多重试 6 次
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
+#    networks:
+#      transactions:
+#        ipv4_address: 172.6.3.4
 
   # mysql -h127.0.0.1 -P3386 -uroot -p123456
   # mysql -h127.0.0.1 -P3386 -uadmin_nacos -p123456
+  # mysql -h172.6.3.5 -P3306 -uadmin_nacos -p123456 ❎
   mysql-nacos:
     container_name: mysql-nacos
     build:
@@ -92,6 +104,9 @@ services:
       timeout: 5s    # 请求超时时间为 5 秒
       retries: 6     # 如果检查失败，最多重试 6 次
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
+#    networks:
+#      transactions:
+#        ipv4_address: 172.6.3.5
 
   # Nacos: http://localhost:8080/index.html nacos/nacos
   # https://nacos.io/docs/v3.0/manual/admin/monitor/ 文档里写的是这个链接，但是报错
@@ -100,6 +115,7 @@ services:
   nacos:
     image: nacos/nacos-server:${NACOS_VERSION:-latest}
     container_name: nacos
+    hostname: nacos
     environment:
       - TZ=Asia/Shanghai  # 设置时区为上海时间
     env_file:
@@ -122,6 +138,89 @@ services:
     depends_on:
       mysql-nacos:
         condition: service_healthy
+#    networks:
+#      transactions:
+#        ipv4_address: 172.6.2.2
+
+  # mysql -h127.0.0.1 -P3396 -uroot -p123456
+  # mysql -h127.0.0.1 -P3396 -uadmin_seata -p123456
+  # mysql -h172.6.3.6 -P3306 -uadmin_seata -p123456 ❎
+  # show processlist; / select user();
+  mysql-seata:
+    container_name: mysql-seata
+    hostname: mysql-seata
+    build:
+      context: .
+      dockerfile: images/mysql-seata.dockerfile
+    image: seata/mysql:8.4
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海时间
+    env_file:
+      - ./env/mysql.env
+    volumes:
+      - ./data/mysql/seata:/bitnami/mysql/data/
+    ports:
+      - "3396:3306"
+    healthcheck:
+      test: ['CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh']
+      interval: 15s  # 每 15 秒检查一次
+      timeout: 5s    # 请求超时时间为 5 秒
+      retries: 6     # 如果检查失败，最多重试 6 次
+      start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
+#    networks:
+#      transactions:
+#        ipv4_address: 172.6.3.5
+
+  # https://seata.apache.org/zh-cn/docs/ops/deploy-by-docker-compose/#nacos-db
+  seata-server:
+    image: seataio/seata-server:${SEATA_VERSION:-latest}
+    container_name: seata-server
+    hostname: seata-server
+    ports:
+      - "8091:8091"
+      - "7091:7091"
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海时间
+#      - SEATA_PORT=8091
+#      - SEATA_IP=seata-server
+    volumes:
+      - "./config/seata/application.yml:/seata-server/resources/application.yml"
+      - "./config/seata/logback-spring.xml:/seata-server/resources/logback-spring.xml"
+    healthcheck:
+      # 这里最好使用 actuator 健康检查链接
+      test: [ "CMD", "curl", "-f", "http://localhost:7091" ]
+      interval: 30s  # 每 30 秒检查一次
+      timeout: 10s   # 请求超时时间为 10 秒
+      retries: 5     # 如果检查失败，最多重试 5 次
+      start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql-seata:
+        condition: service_healthy
+
+  nettools:
+    image: jonlabelle/network-tools:${NETWORK_TOOLS_VERSION:-latest}
+    container_name: nettools
+    hostname: network-tools
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海时间
+    command:
+      - sleep
+      - "3600000"
 
 volumes:
   nacos_log:
+#
+### docker network create --driver bridge --subnet=172.6.0.0/16 transactions
+### docker network create --driver macvlan --subnet=172.6.0.0/16 --gateway=172.6.1.1 -o parent=en0 transactions
+##networks:
+##  transactions:
+##    driver: macvlan
+##    driver_opts:
+##      parent: en0
+##    ipam:
+##      driver: default
+##      config:
+##        - subnet: 172.6.0.0/16
+##          gateway: "172.6.1.1"
