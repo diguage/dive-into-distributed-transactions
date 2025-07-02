@@ -28,14 +28,14 @@ CREATE DATABASE IF NOT EXISTS `db_nacos`
 USE `db_nacos`;
 
 
-/* 以下源文件：https://github.com/alibaba/nacos/blob/3.0.0/distribution/conf/mysql-schema.sql */
+/* 以下源文件：https://github.com/alibaba/nacos/blob/3.0.2/distribution/conf/mysql-schema.sql */
 
 /******************************************/
 /*   表名称 = config_info                  */
 /******************************************/
 CREATE TABLE `config_info`
 (
-    `id`                 bigint        NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `id`                 bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
     `data_id`            varchar(255)  NOT NULL COMMENT 'data_id',
     `group_id`           varchar(128)           DEFAULT NULL COMMENT 'group_id',
     `content`            longtext      NOT NULL COMMENT 'content',
@@ -86,13 +86,13 @@ CREATE TABLE `config_info_gray`
 /******************************************/
 CREATE TABLE `config_tags_relation`
 (
-    `id`        bigint       NOT NULL COMMENT 'id',
+    `id`        bigint(20) NOT NULL COMMENT 'id',
     `tag_name`  varchar(128) NOT NULL COMMENT 'tag_name',
     `tag_type`  varchar(64)  DEFAULT NULL COMMENT 'tag_type',
     `data_id`   varchar(255) NOT NULL COMMENT 'data_id',
     `group_id`  varchar(128) NOT NULL COMMENT 'group_id',
     `tenant_id` varchar(128) DEFAULT '' COMMENT 'tenant_id',
-    `nid`       bigint       NOT NULL AUTO_INCREMENT COMMENT 'nid, 自增长标识',
+    `nid`       bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'nid, 自增长标识',
     PRIMARY KEY (`nid`),
     UNIQUE KEY `uk_configtagrelation_configidtag` (`id`,`tag_name`,`tag_type`),
     KEY         `idx_tenant_id` (`tenant_id`)
@@ -103,14 +103,14 @@ CREATE TABLE `config_tags_relation`
 /******************************************/
 CREATE TABLE `group_capacity`
 (
-    `id`                bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `group_id`          varchar(128) NOT NULL DEFAULT '' COMMENT 'Group ID，空字符表示整个集群',
-    `quota`             int unsigned NOT NULL DEFAULT '0' COMMENT '配额，0表示使用默认值',
-    `usage`             int unsigned NOT NULL DEFAULT '0' COMMENT '使用量',
-    `max_size`          int unsigned NOT NULL DEFAULT '0' COMMENT '单个配置大小上限，单位为字节，0表示使用默认值',
-    `max_aggr_count`    int unsigned NOT NULL DEFAULT '0' COMMENT '聚合子配置最大个数，，0表示使用默认值',
-    `max_aggr_size`     int unsigned NOT NULL DEFAULT '0' COMMENT '单个聚合数据的子配置大小上限，单位为字节，0表示使用默认值',
-    `max_history_count` int unsigned NOT NULL DEFAULT '0' COMMENT '最大变更历史数量',
+    `quota`             int(10) unsigned NOT NULL DEFAULT '0' COMMENT '配额，0表示使用默认值',
+    `usage`             int(10) unsigned NOT NULL DEFAULT '0' COMMENT '使用量',
+    `max_size`          int(10) unsigned NOT NULL DEFAULT '0' COMMENT '单个配置大小上限，单位为字节，0表示使用默认值',
+    `max_aggr_count`    int(10) unsigned NOT NULL DEFAULT '0' COMMENT '聚合子配置最大个数，，0表示使用默认值',
+    `max_aggr_size`     int(10) unsigned NOT NULL DEFAULT '0' COMMENT '单个聚合数据的子配置大小上限，单位为字节，0表示使用默认值',
+    `max_history_count` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '最大变更历史数量',
     `gmt_create`        datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified`      datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`),
@@ -122,8 +122,8 @@ CREATE TABLE `group_capacity`
 /******************************************/
 CREATE TABLE `his_config_info`
 (
-    `id`                 bigint unsigned NOT NULL COMMENT 'id',
-    `nid`                bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'nid, 自增标识',
+    `id`                 bigint(20) unsigned NOT NULL COMMENT 'id',
+    `nid`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'nid, 自增标识',
     `data_id`            varchar(255)  NOT NULL COMMENT 'data_id',
     `group_id`           varchar(128)  NOT NULL COMMENT 'group_id',
     `app_name`           varchar(128)           DEFAULT NULL COMMENT 'app_name',
@@ -151,14 +151,14 @@ CREATE TABLE `his_config_info`
 /******************************************/
 CREATE TABLE `tenant_capacity`
 (
-    `id`                bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `id`                bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `tenant_id`         varchar(128) NOT NULL DEFAULT '' COMMENT 'Tenant ID',
-    `quota`             int unsigned NOT NULL DEFAULT '0' COMMENT '配额，0表示使用默认值',
-    `usage`             int unsigned NOT NULL DEFAULT '0' COMMENT '使用量',
-    `max_size`          int unsigned NOT NULL DEFAULT '0' COMMENT '单个配置大小上限，单位为字节，0表示使用默认值',
-    `max_aggr_count`    int unsigned NOT NULL DEFAULT '0' COMMENT '聚合子配置最大个数',
-    `max_aggr_size`     int unsigned NOT NULL DEFAULT '0' COMMENT '单个聚合数据的子配置大小上限，单位为字节，0表示使用默认值',
-    `max_history_count` int unsigned NOT NULL DEFAULT '0' COMMENT '最大变更历史数量',
+    `quota`             int(10) unsigned NOT NULL DEFAULT '0' COMMENT '配额，0表示使用默认值',
+    `usage`             int(10) unsigned NOT NULL DEFAULT '0' COMMENT '使用量',
+    `max_size`          int(10) unsigned NOT NULL DEFAULT '0' COMMENT '单个配置大小上限，单位为字节，0表示使用默认值',
+    `max_aggr_count`    int(10) unsigned NOT NULL DEFAULT '0' COMMENT '聚合子配置最大个数',
+    `max_aggr_size`     int(10) unsigned NOT NULL DEFAULT '0' COMMENT '单个聚合数据的子配置大小上限，单位为字节，0表示使用默认值',
+    `max_history_count` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '最大变更历史数量',
     `gmt_create`        datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified`      datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`),
@@ -168,14 +168,14 @@ CREATE TABLE `tenant_capacity`
 
 CREATE TABLE `tenant_info`
 (
-    `id`            bigint       NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `id`            bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
     `kp`            varchar(128) NOT NULL COMMENT 'kp',
     `tenant_id`     varchar(128) default '' COMMENT 'tenant_id',
     `tenant_name`   varchar(128) default '' COMMENT 'tenant_name',
     `tenant_desc`   varchar(256) DEFAULT NULL COMMENT 'tenant_desc',
     `create_source` varchar(32)  DEFAULT NULL COMMENT 'create_source',
-    `gmt_create`    bigint       NOT NULL COMMENT '创建时间',
-    `gmt_modified`  bigint       NOT NULL COMMENT '修改时间',
+    `gmt_create`    bigint(20) NOT NULL COMMENT '创建时间',
+    `gmt_modified`  bigint(20) NOT NULL COMMENT '修改时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_tenant_info_kptenantid` (`kp`,`tenant_id`),
     KEY             `idx_tenant_id` (`tenant_id`)

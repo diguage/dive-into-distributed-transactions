@@ -171,7 +171,7 @@ services:
 #      transactions:
 #        ipv4_address: 172.6.3.5
 
-  # http://127.0.0.1:7091/
+  # http://127.0.0.1:7091/   seata/seata
   # http://127.0.0.1:9898/-/healthy -- 健康检查
   # http://127.0.0.1:9898/metrics -- 不报错，也没数据，奇怪！
   # https://seata.apache.org/zh-cn/docs/ops/deploy-by-docker-compose/#nacos-db

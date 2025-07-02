@@ -11,7 +11,7 @@ CREATE DATABASE IF NOT EXISTS `db_seata`
 
 USE `db_seata`;
 
--- 以下文件是从 https://github.com/apache/incubator-seata/blob/develop/script/server/db/mysql.sql 下载
+-- 以下文件是从 https://github.com/apache/incubator-seata/blob/2.4.0/script/server/db/mysql.sql 下载
 
 -- -------------------------------- The script used when storeMode is 'db' --------------------------------
 -- the table to store GlobalSession data
@@ -31,8 +31,7 @@ CREATE TABLE IF NOT EXISTS `global_table`
     PRIMARY KEY (`xid`),
     KEY `idx_status_gmt_modified` (`status` , `gmt_modified`),
     KEY `idx_transaction_id` (`transaction_id`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4;
+    ) ENGINE = InnoDB;
 
 -- the table to store BranchSession data
 CREATE TABLE IF NOT EXISTS `branch_table`
@@ -50,8 +49,7 @@ CREATE TABLE IF NOT EXISTS `branch_table`
     `gmt_modified`      DATETIME(6),
     PRIMARY KEY (`branch_id`),
     KEY `idx_xid` (`xid`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4;
+    ) ENGINE = InnoDB;
 
 -- the table to store lock data
 CREATE TABLE IF NOT EXISTS `lock_table`
@@ -70,8 +68,7 @@ CREATE TABLE IF NOT EXISTS `lock_table`
     KEY `idx_status` (`status`),
     KEY `idx_branch_id` (`branch_id`),
     KEY `idx_xid` (`xid`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4;
+    ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `distributed_lock`
 (
@@ -79,10 +76,18 @@ CREATE TABLE IF NOT EXISTS `distributed_lock`
     `lock_value`     VARCHAR(20) NOT NULL,
     `expire`         BIGINT,
     primary key (`lock_key`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4;
+    ) ENGINE = InnoDB;
 
 INSERT INTO `distributed_lock` (lock_key, lock_value, expire) VALUES ('AsyncCommitting', ' ', 0);
 INSERT INTO `distributed_lock` (lock_key, lock_value, expire) VALUES ('RetryCommitting', ' ', 0);
 INSERT INTO `distributed_lock` (lock_key, lock_value, expire) VALUES ('RetryRollbacking', ' ', 0);
 INSERT INTO `distributed_lock` (lock_key, lock_value, expire) VALUES ('TxTimeoutCheck', ' ', 0);
+
+
+CREATE TABLE IF NOT EXISTS `vgroup_table`
+(
+    `vGroup`    VARCHAR(255),
+    `namespace` VARCHAR(255),
+    `cluster`   VARCHAR(255),
+    UNIQUE KEY `idx_vgroup_namespace_cluster` (`vGroup`,`namespace`,`cluster`)
+    ) ENGINE = InnoDB;
