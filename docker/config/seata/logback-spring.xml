@@ -16,9 +16,11 @@
     </appender>
 
     <logger name="com.sun" level="WARN"/>
+    <logger name="jdk.event" level="WARN"/>
     <logger name="sun.net" level="WARN"/>
     <logger name="io.netty" level="WARN"/>
     <logger name="org.apache.coyote" level="WARN"/>
+    <logger name="org.apache.http" level="WARN"/>
     <logger name="org.apache.tomcat" level="WARN"/>
     <logger name="org.apache.catalina" level="WARN"/>
     <logger name="org.springframework" level="WARN"/>
