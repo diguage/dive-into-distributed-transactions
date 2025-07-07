@@ -29,7 +29,7 @@ services:
       test: ['CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh']
       interval: 15s  # 每 15 秒检查一次
       timeout: 5s    # 请求超时时间为 5 秒
-      retries: 6     # 如果检查失败，最多重试 6 次
+      retries: 10    # 如果检查失败，最多重试 10 次
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
 #    networks:
 #      transactions:
@@ -64,7 +64,7 @@ services:
       test: ['CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh']
       interval: 15s  # 每 15 秒检查一次
       timeout: 5s    # 请求超时时间为 5 秒
-      retries: 6     # 如果检查失败，最多重试 6 次
+      retries: 10    # 如果检查失败，最多重试 10 次
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
 #    networks:
 #      transactions:
@@ -99,7 +99,7 @@ services:
       test: ['CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh']
       interval: 15s  # 每 15 秒检查一次
       timeout: 5s    # 请求超时时间为 5 秒
-      retries: 6     # 如果检查失败，最多重试 6 次
+      retries: 10    # 如果检查失败，最多重试 10 次
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
 #    networks:
 #      transactions:
@@ -134,8 +134,8 @@ services:
       test: ['CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh']
       interval: 15s  # 每 15 秒检查一次
       timeout: 5s    # 请求超时时间为 5 秒
-      retries: 10     # 如果检查失败，最多重试 6 次
-      start_period: 90s  # 等待 60 秒后再开始进行 healthcheck
+      retries: 10    # 如果检查失败，最多重试 6 次
+      start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
 #    networks:
 #      transactions:
 #        ipv4_address: 172.6.3.5
@@ -170,10 +170,10 @@ services:
     healthcheck:
       # 这里最好使用 actuator 健康检查链接
       test: [ "CMD", "curl", "-f", "http://localhost:8080/index.html" ]
-      interval: 30s  # 每 30 秒检查一次
+      interval: 15s  # 每 30 秒检查一次
       timeout: 10s   # 请求超时时间为 10 秒
-      retries: 10     # 如果检查失败，最多重试 5 次
-      start_period: 90s  # 等待 60 秒后再开始进行 healthcheck
+      retries: 10    # 如果检查失败，最多重试 5 次
+      start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
     depends_on:
       mysql-nacos:
         condition: service_healthy
@@ -212,15 +212,15 @@ services:
       test: ['CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh']
       interval: 15s  # 每 15 秒检查一次
       timeout: 5s    # 请求超时时间为 5 秒
-      retries: 10     # 如果检查失败，最多重试 6 次
-      start_period: 90s  # 等待 60 秒后再开始进行 healthcheck
+      retries: 10    # 如果检查失败，最多重试 10 次
+      start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
 #    networks:
 #      transactions:
 #        ipv4_address: 172.6.3.5
 
   # http://127.0.0.1:8081/   seata/seata
-  # http://127.0.0.1:9898/-/healthy -- 健康检查
-  # http://127.0.0.1:9898/metrics -- 不报错，也没数据，奇怪！
+  # http://127.0.0.1:8081/naming/v1/health -- 健康检查
+  # http://127.0.0.1:9897/naming/metrics -- TODO 还没整好！
   # https://seata.apache.org/zh-cn/docs/ops/deploy-by-docker-compose/#nacos-db
   seata-naming-server:
     image: apache/seata-naming-server:${SEATA_VERSION:-latest}
@@ -228,10 +228,11 @@ services:
     hostname: seata-naming-server
     ports:
       - "8081:8081"
+      - "9897:9898"
     environment:
       - TZ=Asia/Shanghai  # 设置时区为上海时间
     volumes:
-      - "./config/seata/logback-spring.xml:/seata-naming-server/resources/logback-spring.xml"
+      - "./config/seata/logback-naming.xml:/seata-naming-server/resources/logback-spring.xml"
     deploy:
       resources:
         limits:
@@ -242,11 +243,11 @@ services:
           memory: 400M
     healthcheck:
       # 这里最好使用 actuator 健康检查链接
-      test: [ "CMD", "curl", "-f", "http://localhost:8081" ]
-      interval: 30s  # 每 30 秒检查一次
+      test: [ "CMD", "curl", "-f", "http://localhost:8081/naming/v1/health" ]
+      interval: 15s  # 每 15 秒检查一次
       timeout: 10s   # 请求超时时间为 10 秒
-      retries: 10     # 如果检查失败，最多重试 5 次
-      start_period: 90s  # 等待 60 秒后再开始进行 healthcheck
+      retries: 10    # 如果检查失败，最多重试 10 次
+      start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
     depends_on:
       mysql-seata:
         condition: service_healthy
@@ -269,7 +270,10 @@ services:
 #      - SEATA_IP=seata-server
     volumes:
       - "./config/seata/application.yml:/seata-server/resources/application.yml"
+      - "./config/seata/logback:/seata-server/resources/logback"
       - "./config/seata/logback-spring.xml:/seata-server/resources/logback-spring.xml"
+      - "./config/seata/mysql-connector-j-8.4.0.jar:/seata-server/libs/mysql-connector-j-8.4.0.jar"
+      - "./config/seata/mysql-connector-j-8.4.0.jar:/seata-server/libs/jdbc/mysql-connector-j-8.4.0.jar"
     deploy:
       resources:
         limits:
@@ -281,9 +285,9 @@ services:
     healthcheck:
       # 这里最好使用 actuator 健康检查链接
       test: [ "CMD", "curl", "-f", "http://localhost:9898/-/healthy" ]
-      interval: 30s  # 每 30 秒检查一次
+      interval: 15s  # 每 15 秒检查一次
       timeout: 10s   # 请求超时时间为 10 秒
-      retries: 5     # 如果检查失败，最多重试 5 次
+      retries: 10    # 如果检查失败，最多重试 10 次
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
     depends_on:
       nacos:
@@ -341,9 +345,9 @@ services:
       # 这里最好使用 actuator 健康检查链接
       # https://stackoverflow.com/a/78342248/951836
       test: [ "CMD", "kafka-cluster.sh", "cluster-id", "--bootstrap-server", "kafka-server:9092" ]
-      interval: 30s  # 每 30 秒检查一次
+      interval: 15s  # 每 30 秒检查一次
       timeout: 10s   # 请求超时时间为 10 秒
-      retries: 5     # 如果检查失败，最多重试 5 次
+      retries: 10    # 如果检查失败，最多重试 10 次
       start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
 #
 #  nettools:

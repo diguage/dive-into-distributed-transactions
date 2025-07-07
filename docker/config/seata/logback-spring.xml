@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration>
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
     <!-- 日志样式 -->
     <property name="log.pattern"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %yellow(%logger{70}).%cyan(%method)@[%red(%line)] - %msg%n"/>
@@ -9,11 +9,138 @@
         <resetJUL>true</resetJUL>
     </contextListener>
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder charset="UTF-8">
-            <pattern>${log.pattern}</pattern>
-        </encoder>
+    <!-- Context listeners -->
+    <contextListener class="org.apache.seata.server.logging.listener.SystemPropertyLoggerContextListener"/>
+
+    <!-- The conversion rules are copied from `defaults.xml` in the `spring-boot-xxx.jar` -->
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
+    <conversionRule conversionWord="wex" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
+    <conversionRule conversionWord="wEx" converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter" />
+    <!-- The custom conversion rules -->
+    <conversionRule conversionWord="wEx2" converterClass="org.apache.seata.server.logging.logback.ExtendedArrowThrowableProxyConverter"/>
+
+    <!-- common properties -->
+    <springProperty name="PORT" source="server.port" defaultValue="7091"/>
+    <springProperty name="LOG_BASH_DIR" source="spring.config.additional-location" defaultValue="" />
+    <springProperty name="APPLICATION_NAME" source="spring.application.name" defaultValue="seata-server"/>
+
+    <!-- Appender enable properties -->
+    <springProperty name="LOGSTASH_APPENDER_ENABLED" source="logging.extend.logstash-appender.enabled" defaultValue="false"/>
+    <springProperty name="KAFKA_APPENDER_ENABLED" source="logging.extend.kafka-appender.enabled" defaultValue="false"/>
+    <springProperty name="METRIC_APPENDER_ENABLED" source="logging.extend.metric-appender.enabled" defaultValue="false"/>
+
+    <if condition='property("LOG_BASH_DIR").equals("")' >
+        <then>
+            <!-- console-appender -->
+            <include resource="logback/console-appender.xml"/>
+
+            <!-- file-appender -->
+            <include resource="logback/file-appender.xml"/>
+
+            <!-- logstash-appender: off by default -->
+            <if condition='property("LOGSTASH_APPENDER_ENABLED").equals("true")'>
+                <then>
+                    <include resource="logback/logstash-appender.xml"/>
+                </then>
+            </if>
+
+            <!-- metric-appender: off by default -->
+            <if condition='property("METRIC_APPENDER_ENABLED").equals("true")'>
+                <then>
+                    <include resource="logback/metric-appender.xml"/>
+                </then>
+            </if>
+
+            <!-- kafka-appender: off by default -->
+            <if condition='property("KAFKA_APPENDER_ENABLED").equals("true")'>
+                <then>
+                    <include resource="logback/kafka-appender.xml"/>
+                </then>
+            </if>
+        </then>
+        <else>
+            <include file="${LOG_BASH_DIR}/logback/console-appender.xml"/>
+            <include file="${LOG_BASH_DIR}/logback/file-appender.xml"/>
+
+            <!-- logstash-appender: off by default -->
+            <if condition='property("LOGSTASH_APPENDER_ENABLED").equals("true")'>
+                <then>
+                    <include resource="logback/logstash-appender.xml"/>
+                </then>
+            </if>
+
+            <!-- metric-appender: off by default -->
+            <if condition='property("METRIC_APPENDER_ENABLED").equals("true")'>
+                <then>
+                    <include resource="logback/metric-appender.xml"/>
+                </then>
+            </if>
+
+            <!-- kafka-appender: off by default -->
+            <if condition='property("KAFKA_APPENDER_ENABLED").equals("true")'>
+                <then>
+                    <include resource="logback/kafka-appender.xml"/>
+                </then>
+            </if>
+        </else>
+    </if>
+
+    <appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+        <!-- console-appender -->
+        <appender-ref ref="CONSOLE"/>
+        <includeCallerData>true</includeCallerData>
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>2048</queueSize>
+        <neverBlock>true</neverBlock>
     </appender>
+    <appender name="ASYNC_FILE_ALL" class="ch.qos.logback.classic.AsyncAppender">
+        <!-- file-appender -->
+        <appender-ref ref="FILE_ALL"/>
+        <includeCallerData>true</includeCallerData>
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>2048</queueSize>
+        <neverBlock>true</neverBlock>
+    </appender>
+    <appender name="ASYNC_FILE_WARN" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE_WARN"/>
+        <includeCallerData>true</includeCallerData>
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+    </appender>
+    <appender name="ASYNC_FILE_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE_ERROR"/>
+        <includeCallerData>true</includeCallerData>
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="ASYNC_CONSOLE"/>
+
+        <!-- logstash-appender: off by default -->
+        <if condition='property("LOGSTASH_APPENDER_ENABLED").equals("true")'>
+            <then>
+                <appender-ref ref="LOGSTASH"/>
+            </then>
+        </if>
+
+        <!-- kafka-appender: off by default -->
+        <if condition='property("KAFKA_APPENDER_ENABLED").equals("true")'>
+            <then>
+                <appender-ref ref="KAFKA"/>
+            </then>
+        </if>
+
+        <!-- metric-appender: off by default -->
+        <if condition='property("METRIC_APPENDER_ENABLED").equals("true")'>
+            <then>
+                <appender-ref ref="METRIC"/>
+            </then>
+        </if>
+
+    </root>
 
     <logger name="com.sun" level="WARN"/>
     <logger name="jdk.event" level="WARN"/>
@@ -36,8 +163,8 @@
     <logger name="org.apache.seata.core.rpc.netty.AbstractNettyRemoting" level="DEBUG"/>
     <logger name="org.apache.seata.server.session.AbstractSessionManager" level="DEBUG"/>
     <logger name="org.apache.seata.core.rpc.processor.server.BatchLogHandler" level="DEBUG"/>
+    <logger name="org.apache.seata.discovery.registry.namingserver.NamingserverRegistryServiceImpl" level="DEBUG"/>
 
-    <root level="DEBUG">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+    <logger name="org.springframework.security.config.annotation.web.builders.WebSecurity" level="ERROR"/>
+    <logger name="org.springframework.security.web.DefaultSecurityFilterChain" level="ERROR"/>
 </configuration>
