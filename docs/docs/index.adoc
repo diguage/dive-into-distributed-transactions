@@ -36,4 +36,6 @@ include::note-and-questions.adoc[leveloffset=+1]
 
 include::license.adoc[leveloffset=+1]
 
+include::notes.adoc[leveloffset=+1]
+
 
