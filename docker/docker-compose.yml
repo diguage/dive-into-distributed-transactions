@@ -231,6 +231,8 @@ services:
       - "9897:9898"
     environment:
       - TZ=Asia/Shanghai  # 设置时区为上海时间
+      - CONSOLE_USER_USERNAME=seata
+      - CONSOLE_USER_PASSWORD=seata
     volumes:
       - "./config/seata/logback-naming.xml:/seata-naming-server/resources/logback-spring.xml"
     deploy:
@@ -266,6 +268,8 @@ services:
       - "9898:9898"
     environment:
       - TZ=Asia/Shanghai  # 设置时区为上海时间
+#      - CONSOLE_USER_USERNAME=seata
+#      - CONSOLE_USER_PASSWORD=seata
 #      - SEATA_PORT=8091
 #      - SEATA_IP=seata-server
     volumes:

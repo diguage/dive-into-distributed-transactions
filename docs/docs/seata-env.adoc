@@ -1,0 +1,71 @@
+[#seata-env]
+= 基于 Seata 的分布式事务解决方案
+
+Seata 的环境搭建起来比较麻烦：官方文档严重滞后，而且可能是考虑 MySQL 多版本依赖的兼容性问题，需要自己手动挂载 MySQL 的 JDBC 依赖。
+
+== 搭建数据库
+
+Seata 初始化脚本从 https://github.com/apache/incubator-seata/blob/2.4.0/script/server/db/mysql.sql[mysql.sql at 2.4.0^] 获取。根据 Seata 的版本来调整 URL 找到对应的初始化脚本文件。
+
+.`docker/config/seata/seata-schema.sql`
+[{sql_src_attr}]
+----
+include::{docker_basedir}/config/seata/seata-schema.sql[]
+----
+
+Dockerfile 配置文件：
+
+.`docker/images/mysql-nacos.dockerfile`
+[{docker_src_attr}]
+----
+include::{docker_basedir}/images/mysql-seata.dockerfile[]
+----
+
+== 启动 Naming Server
+
+Seata 从 2.4.0 开始，把 UI 页面挪到了 Seata Naming Server 服务中。如果想要查看 UI 页面，就需要单独启动Seata Naming Server。这个配置还比较简单：
+
+[{yaml_src_attr}]
+----
+# D瓜哥 · https://www.diguage.com
+services:
+  # http://127.0.0.1:8081/   seata/seata
+  # http://127.0.0.1:8081/naming/v1/health -- 健康检查
+  # http://127.0.0.1:9897/naming/metrics -- TODO 还没整好！
+  # https://seata.apache.org/zh-cn/docs/ops/deploy-by-docker-compose/#nacos-db
+  seata-naming-server:
+    image: apache/seata-naming-server:${SEATA_VERSION:-latest}
+    container_name: seata-naming-server
+    hostname: seata-naming-server
+    ports:
+      - "8081:8081"
+      - "9897:9898"
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海时间
+    volumes:
+      - "./config/seata/logback-naming.xml:/seata-naming-server/resources/logback-spring.xml"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 500M
+        reservations:
+          cpus: '0.10'
+          memory: 400M
+    healthcheck:
+      # 这里最好使用 actuator 健康检查链接
+      test: [ "CMD", "curl", "-f", "http://localhost:8081/naming/v1/health" ]
+      interval: 15s  # 每 15 秒检查一次
+      timeout: 10s   # 请求超时时间为 10 秒
+      retries: 10    # 如果检查失败，最多重试 10 次
+      start_period: 60s  # 等待 60 秒后再开始进行 healthcheck
+    depends_on:
+      mysql-seata:
+        condition: service_healthy
+----
+
+
+[{yaml_src_attr}]
+----
+include::{docker_basedir}/yaml/docker-compose-seata.yml[]
+----

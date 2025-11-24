@@ -1,6 +1,8 @@
 [#seata]
 = 基于 Seata 的分布式事务解决方案
 
+include::seata-env.adoc[leveloffset=+1]
+
 include::seata-at-mode.adoc[leveloffset=+1]
 
 include::seata-tcc-mode.adoc[leveloffset=+1]
