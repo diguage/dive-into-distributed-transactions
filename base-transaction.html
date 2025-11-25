@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<meta name="description" content="文档模板">
+<meta name="keywords" content="文档">
+<meta name="author" content="D瓜哥">
+<title>深入研究分布式事务:  3. 柔性事务</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="assets/styles/asciidoctor.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+<style>
+    a {
+        text-decoration: none;
+    }
+
+    p > code, strong > code, div.admonitionblock tr > td.content > code {
+        color: #d14 !important;
+        background-color: #f5f5f5 !important;
+        border: 1px solid #e1e1e8;
+        white-space: nowrap;
+        border-radius: 3px;
+    }
+</style>
+<link rel="stylesheet" href="assets/styles/asciidoctor-tabs.css">
+<style>.toc-current{color:#d14;font-size:130%;font-weight: bold;} .toc-root{font-family: "Open Sans","DejaVu Sans",sans-serif;
+                       font-size: 0.9em;} #content{display: flex; flex-direction: column; flex: 1 1 auto;}
+             .nav-footer{text-align: center; margin-top: auto;}
+             .nav-footer > p > a {white-space: nowrap;}</style>
+</head>
+<body id="base-transaction" class="book toc2 toc-left">
+<div id="header">
+<h1>深入研究分布式事务:  3. 柔性事务</h1>
+<div class="details">
+<span id="author" class="author">D瓜哥</span><br>
+<span id="email" class="email"><a href="https://www.diguage.com" class="bare">https://www.diguage.com</a></span><br>
+<span id="revdate">0.0.1-SNAPSHOT</span>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">目录</div>
+<p><span class="toc-root"><a href="index.html">深入研究分布式事务</a></span></p><ul class="sectlevel1">
+<li><a href="preface.html">前言</a>
+</li>
+<li><a href="environment.html">1. 开发环境搭建</a>
+</li>
+<li><a href="cap-theorem.html">2. CAP 理论</a>
+</li>
+<li><a href="base-transaction.html"><span class="toc-current">3. 柔性事务</span></a>
+<ul class="sectlevel2">
+<li><a href="base-transaction.html#_参考资料_2">3.1. 参考资料</a>
+</li>
+</ul>
+</li>
+<li><a href="seata.html">4. 基于 Seata 的分布式事务解决方案</a>
+</li>
+<li><a href="best-effort-notification.html">5. 最大努力通知方案</a>
+</li>
+<li><a href="xa-mysql.html">6. MySQL 原生 XA 支持</a>
+</li>
+<li><a href="atomikos.html">7. 基于 Atomikos 的分布式事务解决方案</a>
+</li>
+<li><a href="narayana.html">8. 基于 Narayana 的分布式事务解决方案</a>
+</li>
+<li><a href="other-solution.html">9. 其他解决方案</a>
+</li>
+<li><a href="note-and-questions.html">Appendix C: 随笔及问题</a>
+</li>
+<li><a href="license.html">Appendix D: 版权声明</a>
+</li>
+</ul>
+</div>
+</div>
+<div id="content"><div class="sect2"><h3 id="_友情支持">友情支持</h3><div class="paragraph"><p>如果您觉得这个笔记对您有所帮助，看在D瓜哥码这么多字的辛苦上，请友情支持一下，D瓜哥感激不尽，😜</p></div><table class="tableblock frame-none grid-all stretch"><colgroup><col style="width: 50%;"><col style="width: 50%;"></colgroup><tbody><tr><td class="tableblock halign-center valign-top"><p class="tableblock"><span class="image"><img src="./assets/images/alipay.png" alt="支付宝" width="85%" title="支付宝"></span></p></td><td class="tableblock halign-center valign-top"><p class="tableblock"><span class="image"><img src="./assets/images/wxpay.jpg" alt="微信" width="85%" title="微信"></span></p></td></tr></tbody></table><div class="paragraph"><p>有些打赏的朋友希望可以加个好友，欢迎关注D 瓜哥的微信公众号，这样就可以通过公众号的回复直接给我发信息。</p></div><div class="paragraph"><p><span class="image"><img src="./assets/images/wx-jikerizhi.png" alt="wx jikerizhi" width="98%"></span></p></div><div class="admonitionblock tip"><table><tbody><tr><td class="icon"><i class="fa icon-tip" title="Tip"></i></td><td class="content"><strong>公众号的微信号是: <code>jikerizhi</code></strong>。<em>因为众所周知的原因，有时图片加载不出来。 如果图片加载不出来可以直接通过搜索微信号来查找我的公众号。</em></td></tr></tbody></table></div></div>
+<div class="sect1">
+<h2 id="base-transaction"><a class="anchor" href="#base-transaction"></a> 3. 柔性事务</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_参考资料_2"><a class="anchor" href="#_参考资料_2"></a>3.1. 参考资料</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="https://queue.acm.org/detail.cfm?id=1394128" target="_blank" rel="noopener">BASE: An Acid Alternative - ACM Queue</a></p>
+</li>
+<li>
+<p><a href="https://zhuanlan.zhihu.com/p/183753774" target="_blank" rel="noopener">面试必问：分布式事务六种解决方案</a></p>
+</li>
+<li>
+<p><a href="https://xiaomi-info.github.io/2020/01/02/distributed-transaction/" target="_blank" rel="noopener">分布式事务，这一篇就够了</a></p>
+</li>
+<li>
+<p><a href="https://icyfenix.cn/architect-perspective/general-architecture/transaction/distributed.html" target="_blank" rel="noopener">分布式事务</a></p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph nav-footer">
+<p>← Previous: <a href="cap-theorem.html">CAP 理论</a> | ↑ Up: <a href="index.html">深入研究分布式事务</a> | Next: <a href="seata.html">基于 Seata 的分布式事务解决方案</a> →</p>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+最后更新时间 2025-11-25 01:39:18 UTC
+</div>
+</div>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  messageStyle: "none",
+  tex2jax: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]],
+    ignoreClass: "nostem|nolatexmath"
+  },
+  asciimath2jax: {
+    delimiters: [["\\$", "\\$"]],
+    ignoreClass: "nostem|noasciimath"
+  },
+  TeX: { equationNumbers: { autoNumber: "none" } }
+})
+MathJax.Hub.Register.StartupHook("AsciiMath Jax Ready", function () {
+  MathJax.InputJax.AsciiMath.postfilterHooks.Add(function (data, node) {
+    if ((node = data.script.parentNode) && (node = node.parentNode) && node.classList.contains("stemblock")) {
+      data.math.root.display = "block"
+    }
+    return data
+  })
+})
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>
+<script src="assets/scripts/asciidoctor-tabs.js"></script>
+<script src="assets/scripts/scroll-toc.js"></script></body>
+</html>

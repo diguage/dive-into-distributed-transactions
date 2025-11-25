@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<meta name="description" content="文档模板">
+<meta name="keywords" content="文档">
+<meta name="author" content="D瓜哥">
+<title>深入研究分布式事务:  6. MySQL 原生 XA 支持</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="assets/styles/asciidoctor.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="assets/styles/rouge-github.css">
+<style>
+    a {
+        text-decoration: none;
+    }
+
+    p > code, strong > code, div.admonitionblock tr > td.content > code {
+        color: #d14 !important;
+        background-color: #f5f5f5 !important;
+        border: 1px solid #e1e1e8;
+        white-space: nowrap;
+        border-radius: 3px;
+    }
+</style>
+<link rel="stylesheet" href="assets/styles/asciidoctor-tabs.css">
+<style>.toc-current{color:#d14;font-size:130%;font-weight: bold;} .toc-root{font-family: "Open Sans","DejaVu Sans",sans-serif;
+                       font-size: 0.9em;} #content{display: flex; flex-direction: column; flex: 1 1 auto;}
+             .nav-footer{text-align: center; margin-top: auto;}
+             .nav-footer > p > a {white-space: nowrap;}</style>
+</head>
+<body id="xa-mysql" class="book toc2 toc-left">
+<div id="header">
+<h1>深入研究分布式事务:  6. MySQL 原生 XA 支持</h1>
+<div class="details">
+<span id="author" class="author">D瓜哥</span><br>
+<span id="email" class="email"><a href="https://www.diguage.com" class="bare">https://www.diguage.com</a></span><br>
+<span id="revdate">0.0.1-SNAPSHOT</span>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">目录</div>
+<p><span class="toc-root"><a href="index.html">深入研究分布式事务</a></span></p><ul class="sectlevel1">
+<li><a href="preface.html">前言</a>
+</li>
+<li><a href="environment.html">1. 开发环境搭建</a>
+</li>
+<li><a href="cap-theorem.html">2. CAP 理论</a>
+</li>
+<li><a href="base-transaction.html">3. 柔性事务</a>
+</li>
+<li><a href="seata.html">4. 基于 Seata 的分布式事务解决方案</a>
+</li>
+<li><a href="best-effort-notification.html">5. 最大努力通知方案</a>
+</li>
+<li><a href="xa-mysql.html"><span class="toc-current">6. MySQL 原生 XA 支持</span></a>
+<ul class="sectlevel2">
+<li><a href="xa-mysql.html#_参考资料_5">6.1. 参考资料</a>
+</li>
+</ul>
+</li>
+<li><a href="atomikos.html">7. 基于 Atomikos 的分布式事务解决方案</a>
+</li>
+<li><a href="narayana.html">8. 基于 Narayana 的分布式事务解决方案</a>
+</li>
+<li><a href="other-solution.html">9. 其他解决方案</a>
+</li>
+<li><a href="note-and-questions.html">Appendix C: 随笔及问题</a>
+</li>
+<li><a href="license.html">Appendix D: 版权声明</a>
+</li>
+</ul>
+</div>
+</div>
+<div id="content"><div class="sect2"><h3 id="_友情支持">友情支持</h3><div class="paragraph"><p>如果您觉得这个笔记对您有所帮助，看在D瓜哥码这么多字的辛苦上，请友情支持一下，D瓜哥感激不尽，😜</p></div><table class="tableblock frame-none grid-all stretch"><colgroup><col style="width: 50%;"><col style="width: 50%;"></colgroup><tbody><tr><td class="tableblock halign-center valign-top"><p class="tableblock"><span class="image"><img src="./assets/images/alipay.png" alt="支付宝" width="85%" title="支付宝"></span></p></td><td class="tableblock halign-center valign-top"><p class="tableblock"><span class="image"><img src="./assets/images/wxpay.jpg" alt="微信" width="85%" title="微信"></span></p></td></tr></tbody></table><div class="paragraph"><p>有些打赏的朋友希望可以加个好友，欢迎关注D 瓜哥的微信公众号，这样就可以通过公众号的回复直接给我发信息。</p></div><div class="paragraph"><p><span class="image"><img src="./assets/images/wx-jikerizhi.png" alt="wx jikerizhi" width="98%"></span></p></div><div class="admonitionblock tip"><table><tbody><tr><td class="icon"><i class="fa icon-tip" title="Tip"></i></td><td class="content"><strong>公众号的微信号是: <code>jikerizhi</code></strong>。<em>因为众所周知的原因，有时图片加载不出来。 如果图片加载不出来可以直接通过搜索微信号来查找我的公众号。</em></td></tr></tbody></table></div></div>
+<div class="sect1">
+<h2 id="xa-mysql"><a class="anchor" href="#xa-mysql"></a> 6. MySQL 原生 XA 支持</h2>
+<div class="sectionbody">
+<div class="imageblock text-center">
+<div class="content">
+<img src="./assets/images/xa-mysql-diag.jpg" alt="xa mysql diag" width="95%">
+</div>
+</div>
+<div class="paragraph">
+<p>根据 <a href="https://dev.mysql.com/doc/refman/8.4/en/xa-states.html" target="_blank" rel="noopener">MySQL 文档</a> 所述，MySQL 的状态变化流程如下：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>执行 <code>XA START</code>，进入到 <code>ACTIVE</code> 状态；</p>
+</li>
+<li>
+<p>在 <code>ACTIVE</code> 状态，就可以执行常规的增删改查 SQL 语句来对操作数据；</p>
+</li>
+<li>
+<p>执行 <code>XA END</code>，进入到 <code>IDLE</code> 状态。在这个状态不能执行操作数据的 SQL 语句了。接下来有两种情况：</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>执行 <code>XA COMMIT xid ONE PHASE</code> 直接进去 <code>COMMITTED</code> 终态，事务结束。这种情况，只在当只有一个参与者时才可能发生。</p>
+</li>
+<li>
+<p>执行 <code>XA PREPARE</code>，进入到 <code>PREPARED</code> 状态。这里也只有两种状态：</p>
+<div class="olist lowerroman">
+<ol class="lowerroman" type="i">
+<li>
+<p>执行 <code>XA COMMIT</code> 直接进去 <code>COMMITTED</code> 终态，事务结束。</p>
+</li>
+<li>
+<p>执行 <code>XA COMMIT</code> 失败或者发生错误，进入 <code>FAILED</code>。</p>
+</li>
+<li>
+<p>最后，通过执行 <code>XA ROLLBACK</code> 中断事务的执行，进入到 <code>ABORTED</code> 终态。</p>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="sql"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+</pre></td><td class="code"><pre><span class="n">XA</span> <span class="p">{</span><span class="k">START</span><span class="o">|</span><span class="k">BEGIN</span><span class="p">}</span> <span class="n">xid</span> <span class="p">[</span><span class="k">JOIN</span><span class="o">|</span><span class="n">RESUME</span><span class="p">]</span>
+
+<span class="n">XA</span> <span class="k">END</span> <span class="n">xid</span> <span class="p">[</span><span class="n">SUSPEND</span> <span class="p">[</span><span class="k">FOR</span> <span class="n">MIGRATE</span><span class="p">]]</span>
+
+<span class="n">XA</span> <span class="k">PREPARE</span> <span class="n">xid</span>
+
+<span class="n">XA</span> <span class="k">COMMIT</span> <span class="n">xid</span> <span class="p">[</span><span class="n">ONE</span> <span class="n">PHASE</span><span class="p">]</span>
+
+<span class="n">XA</span> <span class="k">ROLLBACK</span> <span class="n">xid</span>
+
+<span class="n">XA</span> <span class="n">RECOVER</span> <span class="p">[</span><span class="k">CONVERT</span> <span class="n">XID</span><span class="p">]</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>根据上述状态图，结合应用程序，整体执行流程如下：</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./assets/images/xa-process.jpg" alt="xa process" width="95%">
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+D瓜哥私以为，这是我见过最符合实际代码流程的图片。
+</td>
+</tr>
+</table>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./assets/images/2pc-success.png" alt="2pc success" width="95%">
+</div>
+</div>
+<div class="paragraph">
+<p>来查看一下 MySQL 对 XA 的支持情况：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="sql"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+</pre></td><td class="code"><pre><span class="n">mysql</span><span class="o">&gt;</span> <span class="k">select</span> <span class="k">version</span><span class="p">();</span>
+<span class="o">+</span><span class="c1">-----------+</span>
+<span class="o">|</span> <span class="k">version</span><span class="p">()</span> <span class="o">|</span>
+<span class="o">+</span><span class="c1">-----------+</span>
+<span class="o">|</span> <span class="mi">8</span><span class="p">.</span><span class="mi">4</span><span class="p">.</span><span class="mi">5</span>     <span class="o">|</span>
+<span class="o">+</span><span class="c1">-----------+</span>
+<span class="mi">1</span> <span class="k">row</span> <span class="k">in</span> <span class="k">set</span> <span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span> <span class="n">sec</span><span class="p">)</span>
+
+<span class="n">mysql</span><span class="o">&gt;</span> <span class="k">show</span> <span class="n">engines</span><span class="p">;</span>
+<span class="o">+</span><span class="c1">--------------------+---------+----------------------------------------------------------------+--------------+------+------------+</span>
+<span class="o">|</span> <span class="n">Engine</span>             <span class="o">|</span> <span class="n">Support</span> <span class="o">|</span> <span class="k">Comment</span>                                                        <span class="o">|</span> <span class="n">Transactions</span> <span class="o">|</span> <span class="n">XA</span>   <span class="o">|</span> <span class="n">Savepoints</span> <span class="o">|</span>
+<span class="o">+</span><span class="c1">--------------------+---------+----------------------------------------------------------------+--------------+------+------------+</span>
+<span class="o">|</span> <span class="n">ndbcluster</span>         <span class="o">|</span> <span class="k">NO</span>      <span class="o">|</span> <span class="n">Clustered</span><span class="p">,</span> <span class="n">fault</span><span class="o">-</span><span class="n">tolerant</span> <span class="n">tables</span>                               <span class="o">|</span> <span class="k">NULL</span>         <span class="o">|</span> <span class="k">NULL</span> <span class="o">|</span> <span class="k">NULL</span>       <span class="o">|</span>
+<span class="o">|</span> <span class="n">MEMORY</span>             <span class="o">|</span> <span class="n">YES</span>     <span class="o">|</span> <span class="n">Hash</span> <span class="n">based</span><span class="p">,</span> <span class="n">stored</span> <span class="k">in</span> <span class="n">memory</span><span class="p">,</span> <span class="n">useful</span> <span class="k">for</span> <span class="k">temporary</span> <span class="n">tables</span>      <span class="o">|</span> <span class="k">NO</span>           <span class="o">|</span> <span class="k">NO</span>   <span class="o">|</span> <span class="k">NO</span>         <span class="o">|</span>
+<span class="o">|</span> <span class="n">InnoDB</span>             <span class="o">|</span> <span class="k">DEFAULT</span> <span class="o">|</span> <span class="n">Supports</span> <span class="n">transactions</span><span class="p">,</span> <span class="k">row</span><span class="o">-</span><span class="k">level</span> <span class="n">locking</span><span class="p">,</span> <span class="k">and</span> <span class="k">foreign</span> <span class="n">keys</span>     <span class="o">|</span> <span class="n">YES</span>          <span class="o">|</span> <span class="n">YES</span>  <span class="o">|</span> <span class="n">YES</span>        <span class="o">|</span>
+<span class="o">|</span> <span class="n">PERFORMANCE_SCHEMA</span> <span class="o">|</span> <span class="n">YES</span>     <span class="o">|</span> <span class="n">Performance</span> <span class="k">Schema</span>                                             <span class="o">|</span> <span class="k">NO</span>           <span class="o">|</span> <span class="k">NO</span>   <span class="o">|</span> <span class="k">NO</span>         <span class="o">|</span>
+<span class="o">|</span> <span class="n">MyISAM</span>             <span class="o">|</span> <span class="n">YES</span>     <span class="o">|</span> <span class="n">MyISAM</span> <span class="k">storage</span> <span class="n">engine</span>                                          <span class="o">|</span> <span class="k">NO</span>           <span class="o">|</span> <span class="k">NO</span>   <span class="o">|</span> <span class="k">NO</span>         <span class="o">|</span>
+<span class="o">|</span> <span class="n">FEDERATED</span>          <span class="o">|</span> <span class="k">NO</span>      <span class="o">|</span> <span class="n">Federated</span> <span class="n">MySQL</span> <span class="k">storage</span> <span class="n">engine</span>                                 <span class="o">|</span> <span class="k">NULL</span>         <span class="o">|</span> <span class="k">NULL</span> <span class="o">|</span> <span class="k">NULL</span>       <span class="o">|</span>
+<span class="o">|</span> <span class="n">ndbinfo</span>            <span class="o">|</span> <span class="k">NO</span>      <span class="o">|</span> <span class="n">MySQL</span> <span class="k">Cluster</span> <span class="k">system</span> <span class="n">information</span> <span class="k">storage</span> <span class="n">engine</span>                <span class="o">|</span> <span class="k">NULL</span>         <span class="o">|</span> <span class="k">NULL</span> <span class="o">|</span> <span class="k">NULL</span>       <span class="o">|</span>
+<span class="o">|</span> <span class="n">MRG_MYISAM</span>         <span class="o">|</span> <span class="n">YES</span>     <span class="o">|</span> <span class="n">Collection</span> <span class="k">of</span> <span class="n">identical</span> <span class="n">MyISAM</span> <span class="n">tables</span>                          <span class="o">|</span> <span class="k">NO</span>           <span class="o">|</span> <span class="k">NO</span>   <span class="o">|</span> <span class="k">NO</span>         <span class="o">|</span>
+<span class="o">|</span> <span class="n">BLACKHOLE</span>          <span class="o">|</span> <span class="n">YES</span>     <span class="o">|</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="k">null</span> <span class="k">storage</span> <span class="n">engine</span> <span class="p">(</span><span class="n">anything</span> <span class="n">you</span> <span class="k">write</span> <span class="k">to</span> <span class="n">it</span> <span class="n">disappears</span><span class="p">)</span> <span class="o">|</span> <span class="k">NO</span>           <span class="o">|</span> <span class="k">NO</span>   <span class="o">|</span> <span class="k">NO</span>         <span class="o">|</span>
+<span class="o">|</span> <span class="n">CSV</span>                <span class="o">|</span> <span class="n">YES</span>     <span class="o">|</span> <span class="n">CSV</span> <span class="k">storage</span> <span class="n">engine</span>                                             <span class="o">|</span> <span class="k">NO</span>           <span class="o">|</span> <span class="k">NO</span>   <span class="o">|</span> <span class="k">NO</span>         <span class="o">|</span>
+<span class="o">|</span> <span class="n">ARCHIVE</span>            <span class="o">|</span> <span class="n">YES</span>     <span class="o">|</span> <span class="n">Archive</span> <span class="k">storage</span> <span class="n">engine</span>                                         <span class="o">|</span> <span class="k">NO</span>           <span class="o">|</span> <span class="k">NO</span>   <span class="o">|</span> <span class="k">NO</span>         <span class="o">|</span>
+<span class="o">+</span><span class="c1">--------------------+---------+----------------------------------------------------------------+--------------+------+------------+</span>
+<span class="mi">11</span> <span class="k">rows</span> <span class="k">in</span> <span class="k">set</span> <span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span> <span class="n">sec</span><span class="p">)</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在图示的 MySQL 版本中，只有 InnoDB 支持事务，也只有 InnoDB 支持 XA 协议。</p>
+</div>
+<div class="paragraph">
+<p>因为 XA 事务是基于两阶段提交协议的，所以需要有一个事务协调者（Transaction Manager）来保证所有的事务参与者都完成了准备工作(第一阶段)。如果事务协调者（Transaction Manager）收到所有参与者都准备好的消息，就会通知所有的事务都可以提交了（第二阶段）。在DTP模型中，MySQL 属于资源管理器(Resource Manager)。MySQL 对 XA 分布式事务的支持，一般指的是单台 MySQL 实例如何执行自己的事务分支。</p>
+</div>
+<div class="sect2">
+<h3 id="_参考资料_5"><a class="anchor" href="#_参考资料_5"></a>6.1. 参考资料</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="https://dev.mysql.com/blog-archive/improvements-to-xa-support-in-mysql-5-7/" target="_blank" rel="noopener">MySQL :: Improvements to XA Support in MySQL 5.7</a>&#8201;&#8212;&#8201;很重要的一个文档！</p>
+</li>
+<li>
+<p><a href="https://dev.mysql.com/doc/refman/8.4/en/xa.html" target="_blank" rel="noopener">MySQL :: MySQL 8.4 Reference Manual :: 15.3.8 XA Transactions</a></p>
+</li>
+<li>
+<p><a href="https://dev.mysql.com/worklog/task/?id=6860" target="_blank" rel="noopener">MySQL :: WL#6860: Binlogging XA-prepared transaction</a>&#8201;&#8212;&#8201;貌似 XA 的设计文档</p>
+</li>
+<li>
+<p><a href="https://zhuanlan.zhihu.com/p/372300181" target="_blank" rel="noopener">无处不在的 MySQL XA 事务 - 知乎</a></p>
+</li>
+<li>
+<p><a href="https://cloud.tencent.com/developer/article/2194079" target="_blank" rel="noopener">MySQL 中基于 XA 实现的分布式事务-腾讯云开发者社区-腾讯云</a></p>
+</li>
+<li>
+<p><a href="https://en.wikipedia.org/wiki/Two-phase_commit_protocol" target="_blank" rel="noopener">Two-phase commit protocol - Wikipedia</a></p>
+</li>
+<li>
+<p><a href="https://dev.mysql.com/doc/refman/8.4/en/xa-statements.html" target="_blank" rel="noopener">MySQL 8.4 Reference Manual :: 15.3.8.1 XA Transaction SQL Statements</a></p>
+</li>
+<li>
+<p><a href="https://dev.mysql.com/doc/refman/8.4/en/xa-states.html" target="_blank" rel="noopener">MySQL 8.4 Reference Manual :: 15.3.8.2 XA Transaction States</a></p>
+</li>
+<li>
+<p><a href="https://github.com/asdbex1078/MySQL/blob/master/mysql-storage-engines/innodb/1.6.8.0.InnoDB%E4%BA%8B%E5%8A%A1%E2%80%94%E2%80%94%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E4%B9%8BXA.md" target="_blank" rel="noopener">MySQL/mysql-storage-engines/innodb/1.6.8.0.InnoDB事务——分布式事务之XA.md at master · asdbex1078/MySQL</a></p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph nav-footer">
+<p>← Previous: <a href="best-effort-notification.html">最大努力通知方案</a> | ↑ Up: <a href="index.html">深入研究分布式事务</a> | Next: <a href="atomikos.html">基于 Atomikos 的分布式事务解决方案</a> →</p>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+最后更新时间 2025-11-25 01:39:18 UTC
+</div>
+</div>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  messageStyle: "none",
+  tex2jax: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]],
+    ignoreClass: "nostem|nolatexmath"
+  },
+  asciimath2jax: {
+    delimiters: [["\\$", "\\$"]],
+    ignoreClass: "nostem|noasciimath"
+  },
+  TeX: { equationNumbers: { autoNumber: "none" } }
+})
+MathJax.Hub.Register.StartupHook("AsciiMath Jax Ready", function () {
+  MathJax.InputJax.AsciiMath.postfilterHooks.Add(function (data, node) {
+    if ((node = data.script.parentNode) && (node = node.parentNode) && node.classList.contains("stemblock")) {
+      data.math.root.display = "block"
+    }
+    return data
+  })
+})
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>
+<script src="assets/scripts/asciidoctor-tabs.js"></script>
+<script src="assets/scripts/scroll-toc.js"></script></body>
+</html>

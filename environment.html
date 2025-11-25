@@ -1,0 +1,2845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<meta name="description" content="文档模板">
+<meta name="keywords" content="文档">
+<meta name="author" content="D瓜哥">
+<title>深入研究分布式事务:  1. 开发环境搭建</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="assets/styles/asciidoctor.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="assets/styles/rouge-github.css">
+<style>
+    a {
+        text-decoration: none;
+    }
+
+    p > code, strong > code, div.admonitionblock tr > td.content > code {
+        color: #d14 !important;
+        background-color: #f5f5f5 !important;
+        border: 1px solid #e1e1e8;
+        white-space: nowrap;
+        border-radius: 3px;
+    }
+</style>
+<link rel="stylesheet" href="assets/styles/asciidoctor-tabs.css">
+<style>.toc-current{color:#d14;font-size:130%;font-weight: bold;} .toc-root{font-family: "Open Sans","DejaVu Sans",sans-serif;
+                       font-size: 0.9em;} #content{display: flex; flex-direction: column; flex: 1 1 auto;}
+             .nav-footer{text-align: center; margin-top: auto;}
+             .nav-footer > p > a {white-space: nowrap;}</style>
+</head>
+<body id="environment" class="book toc2 toc-left">
+<div id="header">
+<h1>深入研究分布式事务:  1. 开发环境搭建</h1>
+<div class="details">
+<span id="author" class="author">D瓜哥</span><br>
+<span id="email" class="email"><a href="https://www.diguage.com" class="bare">https://www.diguage.com</a></span><br>
+<span id="revdate">0.0.1-SNAPSHOT</span>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">目录</div>
+<p><span class="toc-root"><a href="index.html">深入研究分布式事务</a></span></p><ul class="sectlevel1">
+<li><a href="preface.html">前言</a>
+</li>
+<li><a href="environment.html"><span class="toc-current">1. 开发环境搭建</span></a>
+<ul class="sectlevel2">
+<li><a href="environment.html#_搭建数据库">1.1. 搭建数据库</a>
+<ul class="sectlevel3">
+<li><a href="environment.html#_账户数据库">1.1.1. 账户数据库</a>
+</li>
+<li><a href="environment.html#_订单数据库">1.1.2. 订单数据库</a>
+</li>
+<li><a href="environment.html#_库存数据库">1.1.3. 库存数据库</a>
+</li>
+<li><a href="environment.html#_搭建_nacos">1.1.4. 搭建 NACOS</a>
+</li>
+</ul>
+</li>
+<li><a href="environment.html#_清理环境">1.2. 清理环境</a>
+</li>
+</ul>
+</li>
+<li><a href="cap-theorem.html">2. CAP 理论</a>
+</li>
+<li><a href="base-transaction.html">3. 柔性事务</a>
+</li>
+<li><a href="seata.html">4. 基于 Seata 的分布式事务解决方案</a>
+</li>
+<li><a href="best-effort-notification.html">5. 最大努力通知方案</a>
+</li>
+<li><a href="xa-mysql.html">6. MySQL 原生 XA 支持</a>
+</li>
+<li><a href="atomikos.html">7. 基于 Atomikos 的分布式事务解决方案</a>
+</li>
+<li><a href="narayana.html">8. 基于 Narayana 的分布式事务解决方案</a>
+</li>
+<li><a href="other-solution.html">9. 其他解决方案</a>
+</li>
+<li><a href="note-and-questions.html">Appendix C: 随笔及问题</a>
+</li>
+<li><a href="license.html">Appendix D: 版权声明</a>
+</li>
+</ul>
+</div>
+</div>
+<div id="content"><div class="sect2"><h3 id="_友情支持">友情支持</h3><div class="paragraph"><p>如果您觉得这个笔记对您有所帮助，看在D瓜哥码这么多字的辛苦上，请友情支持一下，D瓜哥感激不尽，😜</p></div><table class="tableblock frame-none grid-all stretch"><colgroup><col style="width: 50%;"><col style="width: 50%;"></colgroup><tbody><tr><td class="tableblock halign-center valign-top"><p class="tableblock"><span class="image"><img src="./assets/images/alipay.png" alt="支付宝" width="85%" title="支付宝"></span></p></td><td class="tableblock halign-center valign-top"><p class="tableblock"><span class="image"><img src="./assets/images/wxpay.jpg" alt="微信" width="85%" title="微信"></span></p></td></tr></tbody></table><div class="paragraph"><p>有些打赏的朋友希望可以加个好友，欢迎关注D 瓜哥的微信公众号，这样就可以通过公众号的回复直接给我发信息。</p></div><div class="paragraph"><p><span class="image"><img src="./assets/images/wx-jikerizhi.png" alt="wx jikerizhi" width="98%"></span></p></div><div class="admonitionblock tip"><table><tbody><tr><td class="icon"><i class="fa icon-tip" title="Tip"></i></td><td class="content"><strong>公众号的微信号是: <code>jikerizhi</code></strong>。<em>因为众所周知的原因，有时图片加载不出来。 如果图片加载不出来可以直接通过搜索微信号来查找我的公众号。</em></td></tr></tbody></table></div></div>
+<div class="sect1">
+<h2 id="environment"><a class="anchor" href="#environment"></a> 1. 开发环境搭建</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>为了方便项目整体迁移的便利性，所有的基础设施全部使用 Docker 来搞。也为了方便管理众多的环境配置，使用 Docker Compose 来做管理，这样一个配置文件，一行命令，就可以把全部所需的环境给拉起来。</p>
+</div>
+<div class="paragraph">
+<p>由于 Seata 包含了众多解决方案，也是一个重点描述对象。所以，全文的示例文档全部参考 Seata 的示例。整体流程是用户购买商品的业务逻辑：创建订单，扣除用户余额，扣除仓储数量。</p>
+</div>
+<div class="sect2">
+<h3 id="_搭建数据库"><a class="anchor" href="#_搭建数据库"></a>1.1. 搭建数据库</h3>
+<div class="paragraph">
+<p>MySQL 的镜像支持使用 SQL 语句文件来初始化，只需要把相关文件放在指定目录下，在第一次启动时或者在每次启动时，都会执行目录下的 SQL 脚本文件。</p>
+</div>
+<div class="paragraph">
+<p>这里选用 <a href="https://hub.docker.com/r/bitnami/mysql" target="_blank" rel="noopener">bitnami/mysql</a> 镜像作为基础镜像。根据其文档，有两个目录满足上述需求：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>/docker-entrypoint-initdb.d</code>&#8201;&#8212;&#8201;只有容器在第一次启动时才执行。</p>
+</li>
+<li>
+<p><code>/docker-entrypoint-startdb.d</code>&#8201;&#8212;&#8201;在容器每次启动时，都会执行。</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>所以，还需要把初始化脚本挂载到 <code>/docker-entrypoint-initdb.d</code> 目录下就可以完成初始化工作。</p>
+</div>
+<div class="sect3">
+<h4 id="_账户数据库"><a class="anchor" href="#_账户数据库"></a>1.1.1. 账户数据库</h4>
+<div class="paragraph">
+<p>对于账户数据库，需要完成如下三个操作：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>创建相关管理账户 <code>admin_account</code>，并完成对数据库 <code>db_account</code> 的授权。</p>
+</li>
+<li>
+<p>创建账户数据库 <code>db_account</code>。</p>
+</li>
+<li>
+<p>在 <code>db_account</code> 数据库中，创建相关的表。</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>在上述操作转换对应的 SQL 语句写在 <code>docker/config/mysql/init-account.sql</code> 文件中，内容如下：</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 1. <code>docker/config/mysql/init-account.sql</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="sql"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+</pre></td><td class="code"><pre><span class="c1">-- https://stackoverflow.com/a/52899915</span>
+
+
+<span class="c1">-- create root user and grant rights</span>
+<span class="c1">-- https://stackoverflow.com/a/16592722</span>
+<span class="k">CREATE</span> <span class="k">USER</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="s1">'admin_account'</span><span class="o">@</span><span class="s1">'%'</span> <span class="n">IDENTIFIED</span> <span class="k">BY</span> <span class="s1">'123456'</span><span class="p">;</span>
+<span class="k">GRANT</span> <span class="k">ALL</span> <span class="k">ON</span> <span class="nv">`db_account`</span><span class="p">.</span><span class="o">*</span> <span class="k">TO</span> <span class="s1">'admin_account'</span><span class="o">@</span><span class="s1">'%'</span><span class="p">;</span>
+
+<span class="n">FLUSH</span> <span class="k">PRIVILEGES</span><span class="p">;</span>
+
+
+<span class="c1">-- create databases</span>
+<span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="nv">`db_account`</span>
+       <span class="k">default</span> <span class="nb">character</span> <span class="k">set</span> <span class="n">utf8mb4</span> <span class="k">collate</span> <span class="n">utf8mb4_0900_ai_ci</span><span class="p">;</span>
+
+<span class="n">USE</span> <span class="nv">`db_account`</span><span class="p">;</span>
+
+<span class="k">DROP</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="nv">`account_tbl`</span><span class="p">;</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`account_tbl`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>      <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="nv">`user_id`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`money`</span>   <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span><span class="p">;</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">account_tbl</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">user_id</span><span class="p">,</span> <span class="n">money</span><span class="p">)</span>
+<span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'diguage'</span><span class="p">,</span> <span class="mi">99999999</span><span class="p">);</span>
+
+
+<span class="k">DROP</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="nv">`undo_log`</span><span class="p">;</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`undo_log`</span>
+<span class="p">(</span>
+    <span class="nv">`branch_id`</span>     <span class="nb">BIGINT</span>       <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'branch transaction id'</span><span class="p">,</span>
+    <span class="nv">`xid`</span>           <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'global transaction id'</span><span class="p">,</span>
+    <span class="nv">`context`</span>       <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'undo_log context,such as serialization'</span><span class="p">,</span>
+    <span class="nv">`rollback_info`</span> <span class="nb">LONGBLOB</span>     <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'rollback info'</span><span class="p">,</span>
+    <span class="nv">`log_status`</span>    <span class="nb">INT</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'0:normal status,1:defense status'</span><span class="p">,</span>
+    <span class="nv">`log_created`</span>   <span class="nb">DATETIME</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'create datetime'</span><span class="p">,</span>
+    <span class="nv">`log_modified`</span>  <span class="nb">DATETIME</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'modify datetime'</span><span class="p">,</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`ux_undo_log`</span> <span class="p">(</span><span class="nv">`xid`</span><span class="p">,</span> <span class="nv">`branch_id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">InnoDB</span> <span class="n">AUTO_INCREMENT</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span> <span class="o">=</span> <span class="n">utf8mb4</span> <span class="k">COMMENT</span> <span class="o">=</span><span class="s1">'AT transaction mode undo table'</span><span class="p">;</span>
+
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="nv">`undo_log`</span>
+    <span class="k">ADD</span> <span class="k">INDEX</span> <span class="nv">`ix_log_created`</span> <span class="p">(</span><span class="nv">`log_created`</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>基础镜像选择 <a href="https://hub.docker.com/r/bitnami/mysql" target="_blank" rel="noopener">bitnami/mysql</a>，在此之上，我们需要挂载上述的初始化 SQL 文件，按照 Dockerfile 的语法，将其写入到 <code>docker/images/mysql-account.dockerfile</code>，内容如下：</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 2. <code>docker/images/mysql-account.dockerfile</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="docker"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="k">FROM</span><span class="s"> bitnami/mysql:8.4</span>
+
+<span class="k">ADD</span><span class="s"> ./config/mysql/init-account.sql /docker-entrypoint-initdb.d/init.sql</span>
+
+<span class="c"># https://github.com/bitnami/containers/blob/main/bitnami/mysql/9.3/debian-12/Dockerfile</span>
+<span class="k">EXPOSE</span><span class="s"> 3306</span>
+<span class="k">USER</span><span class="s"> 1001</span>
+<span class="k">ENTRYPOINT</span><span class="s"> [ "/opt/bitnami/scripts/mysql/entrypoint.sh" ]</span>
+<span class="k">CMD</span><span class="s"> [ "/opt/bitnami/scripts/mysql/run.sh" ]</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>除此之外，还需要初始化 MySQL 的 <code>root</code> 账户密码，为了方便复用，将其抽取到 <code>docker/env/mysql.env</code> 文件中，内容如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="bash"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno">1
+2
+</pre></td><td class="code"><pre><span class="nv">MYSQL_ROOT_PASSWORD</span><span class="o">=</span>123456
+<span class="nv">LANG</span><span class="o">=</span>C.UTF-8
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>由于使用 Docker Compose，所以，最后在 <code>docker-compose.yml</code> 中，使用上述 Dockerfile 来启动数据库服务：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="yaml"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+</pre></td><td class="code"><pre><span class="c1"># D瓜哥 · https://www.diguage.com</span>
+<span class="na">services</span><span class="pi">:</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3356 -uroot -p123456</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3356 -uadmin_storage -p123456</span>
+  <span class="c1"># mysql -h172.6.3.2 -P3306 -uadmin_storage -p123456 ❎</span>
+  <span class="na">mysql-storage</span><span class="pi">:</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">mysql-storage</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">.</span>
+      <span class="na">dockerfile</span><span class="pi">:</span> <span class="s">images/mysql-storage.dockerfile</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">storage/mysql:8.4</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./env/mysql.env</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/mysql/storage:/bitnami/mysql/data/</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">3356:3306"</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span> <span class="s1">'</span><span class="s">CMD'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">/opt/bitnami/scripts/mysql/healthcheck.sh'</span> <span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">5s</span>    <span class="c1"># 请求超时时间为 5 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">6</span>     <span class="c1"># 如果检查失败，最多重试 6 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>经过上述配置，在 <code>docker-compose.yml</code> 同一目录下，执行 <code>docker compose up</code> 命令就可以启动该数据库了。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_订单数据库"><a class="anchor" href="#_订单数据库"></a>1.1.2. 订单数据库</h4>
+<div class="paragraph">
+<p>订单初始化文件：</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 3. <code>docker/config/mysql/init-order.sql</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="sql"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+</pre></td><td class="code"><pre><span class="c1">-- https://stackoverflow.com/a/52899915</span>
+
+
+<span class="c1">-- create root user and grant rights</span>
+<span class="c1">-- https://stackoverflow.com/a/16592722</span>
+<span class="k">CREATE</span> <span class="k">USER</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="s1">'admin_order'</span><span class="o">@</span><span class="s1">'%'</span> <span class="n">IDENTIFIED</span> <span class="k">BY</span> <span class="s1">'123456'</span><span class="p">;</span>
+<span class="k">GRANT</span> <span class="k">ALL</span> <span class="k">ON</span> <span class="nv">`db_order`</span><span class="p">.</span><span class="o">*</span> <span class="k">TO</span> <span class="s1">'admin_order'</span><span class="o">@</span><span class="s1">'%'</span><span class="p">;</span>
+
+<span class="n">FLUSH</span> <span class="k">PRIVILEGES</span><span class="p">;</span>
+
+
+<span class="c1">-- create databases</span>
+<span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="nv">`db_order`</span>
+       <span class="k">default</span> <span class="nb">character</span> <span class="k">set</span> <span class="n">utf8mb4</span> <span class="k">collate</span> <span class="n">utf8mb4_0900_ai_ci</span><span class="p">;</span>
+
+<span class="n">USE</span> <span class="nv">`db_order`</span><span class="p">;</span>
+
+<span class="k">DROP</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="nv">`order_tbl`</span><span class="p">;</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`order_tbl`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>             <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="nv">`user_id`</span>        <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`commodity_code`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`count`</span>          <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nv">`money`</span>          <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span><span class="p">;</span>
+
+
+<span class="k">DROP</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="nv">`undo_log`</span><span class="p">;</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`undo_log`</span>
+<span class="p">(</span>
+    <span class="nv">`branch_id`</span>     <span class="nb">BIGINT</span>       <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'branch transaction id'</span><span class="p">,</span>
+    <span class="nv">`xid`</span>           <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'global transaction id'</span><span class="p">,</span>
+    <span class="nv">`context`</span>       <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'undo_log context,such as serialization'</span><span class="p">,</span>
+    <span class="nv">`rollback_info`</span> <span class="nb">LONGBLOB</span>     <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'rollback info'</span><span class="p">,</span>
+    <span class="nv">`log_status`</span>    <span class="nb">INT</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'0:normal status,1:defense status'</span><span class="p">,</span>
+    <span class="nv">`log_created`</span>   <span class="nb">DATETIME</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'create datetime'</span><span class="p">,</span>
+    <span class="nv">`log_modified`</span>  <span class="nb">DATETIME</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'modify datetime'</span><span class="p">,</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`ux_undo_log`</span> <span class="p">(</span><span class="nv">`xid`</span><span class="p">,</span> <span class="nv">`branch_id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">InnoDB</span> <span class="n">AUTO_INCREMENT</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span> <span class="o">=</span> <span class="n">utf8mb4</span> <span class="k">COMMENT</span> <span class="o">=</span><span class="s1">'AT transaction mode undo table'</span><span class="p">;</span>
+
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="nv">`undo_log`</span>
+    <span class="k">ADD</span> <span class="k">INDEX</span> <span class="nv">`ix_log_created`</span> <span class="p">(</span><span class="nv">`log_created`</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Dockerfile 配置文件：</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 4. <code>docker/images/mysql-order.dockerfile</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="docker"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="k">FROM</span><span class="s"> bitnami/mysql:8.4</span>
+
+<span class="k">ADD</span><span class="s"> ./config/mysql/init-order.sql /docker-entrypoint-initdb.d/init.sql</span>
+
+<span class="c"># https://github.com/bitnami/containers/blob/main/bitnami/mysql/9.3/debian-12/Dockerfile</span>
+<span class="k">EXPOSE</span><span class="s"> 3306</span>
+<span class="k">USER</span><span class="s"> 1001</span>
+<span class="k">ENTRYPOINT</span><span class="s"> [ "/opt/bitnami/scripts/mysql/entrypoint.sh" ]</span>
+<span class="k">CMD</span><span class="s"> [ "/opt/bitnami/scripts/mysql/run.sh" ]</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Docker Compose 文件：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="yaml"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+</pre></td><td class="code"><pre><span class="c1"># D瓜哥 · https://www.diguage.com</span>
+<span class="na">services</span><span class="pi">:</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3366 -uroot -p123456</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3366 -uadmin_order -p123456</span>
+  <span class="c1"># mysql -h172.6.3.3 -P3306 -uadmin_order -p123456</span>
+  <span class="na">mysql-order</span><span class="pi">:</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">mysql-order</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">.</span>
+      <span class="na">dockerfile</span><span class="pi">:</span> <span class="s">images/mysql-order.dockerfile</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">order/mysql:8.4</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./env/mysql.env</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/mysql/order:/bitnami/mysql/data/</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">3366:3306"</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">CMD'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">/opt/bitnami/scripts/mysql/healthcheck.sh'</span><span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">5s</span>    <span class="c1"># 请求超时时间为 5 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">6</span>     <span class="c1"># 如果检查失败，最多重试 6 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_库存数据库"><a class="anchor" href="#_库存数据库"></a>1.1.3. 库存数据库</h4>
+<div class="paragraph">
+<p>库存初始化文件：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="sql"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+</pre></td><td class="code"><pre><span class="c1">-- https://stackoverflow.com/a/52899915</span>
+
+
+<span class="c1">-- create root user and grant rights</span>
+<span class="c1">-- https://stackoverflow.com/a/16592722</span>
+<span class="k">CREATE</span> <span class="k">USER</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="s1">'admin_storage'</span><span class="o">@</span><span class="s1">'%'</span> <span class="n">IDENTIFIED</span> <span class="k">BY</span> <span class="s1">'123456'</span><span class="p">;</span>
+<span class="k">GRANT</span> <span class="k">ALL</span> <span class="k">ON</span> <span class="nv">`db_storage`</span><span class="p">.</span><span class="o">*</span> <span class="k">TO</span> <span class="s1">'admin_storage'</span><span class="o">@</span><span class="s1">'%'</span><span class="p">;</span>
+
+<span class="n">FLUSH</span> <span class="k">PRIVILEGES</span><span class="p">;</span>
+
+
+<span class="c1">-- create databases</span>
+<span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="nv">`db_storage`</span>
+       <span class="k">default</span> <span class="nb">character</span> <span class="k">set</span> <span class="n">utf8mb4</span> <span class="k">collate</span> <span class="n">utf8mb4_0900_ai_ci</span><span class="p">;</span>
+
+<span class="n">USE</span> <span class="nv">`db_storage`</span><span class="p">;</span>
+
+
+<span class="k">DROP</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="nv">`storage_tbl`</span><span class="p">;</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`storage_tbl`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>             <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="nv">`commodity_code`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`count`</span>          <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`commodity_code`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span><span class="p">;</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">storage_tbl</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">commodity_code</span><span class="p">,</span> <span class="nv">`count`</span><span class="p">)</span>
+<span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'j10'</span><span class="p">,</span> <span class="mi">666</span><span class="p">);</span>
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`stock_tbl`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>             <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="nv">`commodity_code`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`count`</span>          <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`commodity_code`</span> <span class="p">(</span><span class="nv">`commodity_code`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="n">AUTO_INCREMENT</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">stock_tbl</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">commodity_code</span><span class="p">,</span> <span class="nv">`count`</span><span class="p">)</span>
+<span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'j10'</span><span class="p">,</span> <span class="mi">666</span><span class="p">);</span>
+
+<span class="k">DROP</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="nv">`undo_log`</span><span class="p">;</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`undo_log`</span>
+<span class="p">(</span>
+    <span class="nv">`branch_id`</span>     <span class="nb">BIGINT</span>       <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'branch transaction id'</span><span class="p">,</span>
+    <span class="nv">`xid`</span>           <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'global transaction id'</span><span class="p">,</span>
+    <span class="nv">`context`</span>       <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'undo_log context,such as serialization'</span><span class="p">,</span>
+    <span class="nv">`rollback_info`</span> <span class="nb">LONGBLOB</span>     <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'rollback info'</span><span class="p">,</span>
+    <span class="nv">`log_status`</span>    <span class="nb">INT</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'0:normal status,1:defense status'</span><span class="p">,</span>
+    <span class="nv">`log_created`</span>   <span class="nb">DATETIME</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'create datetime'</span><span class="p">,</span>
+    <span class="nv">`log_modified`</span>  <span class="nb">DATETIME</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'modify datetime'</span><span class="p">,</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`ux_undo_log`</span> <span class="p">(</span><span class="nv">`xid`</span><span class="p">,</span> <span class="nv">`branch_id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">InnoDB</span> <span class="n">AUTO_INCREMENT</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span> <span class="o">=</span> <span class="n">utf8mb4</span> <span class="k">COMMENT</span> <span class="o">=</span><span class="s1">'AT transaction mode undo table'</span><span class="p">;</span>
+
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="nv">`undo_log`</span>
+    <span class="k">ADD</span> <span class="k">INDEX</span> <span class="nv">`ix_log_created`</span> <span class="p">(</span><span class="nv">`log_created`</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Dockerfile 配置文件：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="docker"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="k">FROM</span><span class="s"> bitnami/mysql:8.4</span>
+
+<span class="k">ADD</span><span class="s"> ./config/mysql/init-storage.sql /docker-entrypoint-initdb.d/init.sql</span>
+
+<span class="c"># https://github.com/bitnami/containers/blob/main/bitnami/mysql/9.3/debian-12/Dockerfile</span>
+<span class="k">EXPOSE</span><span class="s"> 3306</span>
+<span class="k">USER</span><span class="s"> 1001</span>
+<span class="k">ENTRYPOINT</span><span class="s"> [ "/opt/bitnami/scripts/mysql/entrypoint.sh" ]</span>
+<span class="k">CMD</span><span class="s"> [ "/opt/bitnami/scripts/mysql/run.sh" ]</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Docker Compose 文件：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="yaml"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+</pre></td><td class="code"><pre><span class="c1"># D瓜哥 · https://www.diguage.com</span>
+<span class="na">services</span><span class="pi">:</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3356 -uroot -p123456</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3356 -uadmin_storage -p123456</span>
+  <span class="c1"># mysql -h172.6.3.2 -P3306 -uadmin_storage -p123456 ❎</span>
+  <span class="na">mysql-storage</span><span class="pi">:</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">mysql-storage</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">.</span>
+      <span class="na">dockerfile</span><span class="pi">:</span> <span class="s">images/mysql-storage.dockerfile</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">storage/mysql:8.4</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./env/mysql.env</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/mysql/storage:/bitnami/mysql/data/</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">3356:3306"</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">CMD'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">/opt/bitnami/scripts/mysql/healthcheck.sh'</span><span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">5s</span>    <span class="c1"># 请求超时时间为 5 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">6</span>     <span class="c1"># 如果检查失败，最多重试 6 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_搭建_nacos"><a class="anchor" href="#_搭建_nacos"></a>1.1.4. 搭建 NACOS</h4>
+<div class="paragraph">
+<p>NACOS 是目前 Dubbo 一个最重要的注册中心和配置中心，这里选择 NACOS 作为示例的注册中心和配置中心。NACOS 的搭建主要分为两边：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>搭建所需的数据库。这个过程和上面的过程一样。</p>
+</li>
+<li>
+<p>准备 NACOS 运行所需的配置文件，最后启动即可。</p>
+</li>
+</ol>
+</div>
+<div class="sect4">
+<h5 id="_数据库"><a class="anchor" href="#_数据库"></a>数据库</h5>
+<div class="paragraph">
+<p>NACOS 初始化脚本从 <a href="https://github.com/alibaba/nacos/blob/3.0.0/distribution/conf/mysql-schema.sql" target="_blank" rel="noopener">nacos/distribution/conf/mysql-schema.sql at 3.0.0</a> 获取。需要根据 NACOS 的版本来选择对应的初始化脚本文件。</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 5. <code>docker/config/nacos/nacos-schema.sql</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="sql"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno">  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+ 78
+ 79
+ 80
+ 81
+ 82
+ 83
+ 84
+ 85
+ 86
+ 87
+ 88
+ 89
+ 90
+ 91
+ 92
+ 93
+ 94
+ 95
+ 96
+ 97
+ 98
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+</pre></td><td class="code"><pre><span class="cm">/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */</span>
+
+<span class="c1">-- create root user and grant rights</span>
+<span class="c1">-- https://stackoverflow.com/a/16592722</span>
+<span class="k">CREATE</span> <span class="k">USER</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="s1">'admin_nacos'</span><span class="o">@</span><span class="s1">'%'</span> <span class="n">IDENTIFIED</span> <span class="k">BY</span> <span class="s1">'123456'</span><span class="p">;</span>
+<span class="k">GRANT</span> <span class="k">ALL</span> <span class="k">ON</span> <span class="nv">`db_nacos`</span><span class="p">.</span><span class="o">*</span> <span class="k">TO</span> <span class="s1">'admin_nacos'</span><span class="o">@</span><span class="s1">'%'</span><span class="p">;</span>
+
+<span class="n">FLUSH</span> <span class="k">PRIVILEGES</span><span class="p">;</span>
+
+<span class="c1">-- create databases</span>
+<span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="nv">`db_nacos`</span>
+       <span class="k">default</span> <span class="nb">character</span> <span class="k">set</span> <span class="n">utf8mb4</span> <span class="k">collate</span> <span class="n">utf8mb4_0900_bin</span><span class="p">;</span>
+
+<span class="n">USE</span> <span class="nv">`db_nacos`</span><span class="p">;</span>
+
+
+<span class="cm">/* 以下源文件：https://github.com/alibaba/nacos/blob/3.0.2/distribution/conf/mysql-schema.sql */</span>
+
+<span class="cm">/******************************************/</span>
+<span class="cm">/*   表名称 = config_info                  */</span>
+<span class="cm">/******************************************/</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`config_info`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>                 <span class="nb">bigint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span> <span class="k">COMMENT</span> <span class="s1">'id'</span><span class="p">,</span>
+    <span class="nv">`data_id`</span>            <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'data_id'</span><span class="p">,</span>
+    <span class="nv">`group_id`</span>           <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>           <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'group_id'</span><span class="p">,</span>
+    <span class="nv">`content`</span>            <span class="nb">longtext</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'content'</span><span class="p">,</span>
+    <span class="nv">`md5`</span>                <span class="nb">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>            <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'md5'</span><span class="p">,</span>
+    <span class="nv">`gmt_create`</span>         <span class="nb">datetime</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span> <span class="k">COMMENT</span> <span class="s1">'创建时间'</span><span class="p">,</span>
+    <span class="nv">`gmt_modified`</span>       <span class="nb">datetime</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span> <span class="k">COMMENT</span> <span class="s1">'修改时间'</span><span class="p">,</span>
+    <span class="nv">`src_user`</span>           <span class="nb">text</span> <span class="k">COMMENT</span> <span class="s1">'source user'</span><span class="p">,</span>
+    <span class="nv">`src_ip`</span>             <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>            <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'source ip'</span><span class="p">,</span>
+    <span class="nv">`app_name`</span>           <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>           <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'app_name'</span><span class="p">,</span>
+    <span class="nv">`tenant_id`</span>          <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>           <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'租户字段'</span><span class="p">,</span>
+    <span class="nv">`c_desc`</span>             <span class="nb">varchar</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span>           <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'configuration description'</span><span class="p">,</span>
+    <span class="nv">`c_use`</span>              <span class="nb">varchar</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>            <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'configuration usage'</span><span class="p">,</span>
+    <span class="nv">`effect`</span>             <span class="nb">varchar</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>            <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'配置生效的描述'</span><span class="p">,</span>
+    <span class="nv">`type`</span>               <span class="nb">varchar</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>            <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'配置的类型'</span><span class="p">,</span>
+    <span class="nv">`c_schema`</span>           <span class="nb">text</span> <span class="k">COMMENT</span> <span class="s1">'配置的模式'</span><span class="p">,</span>
+    <span class="nv">`encrypted_data_key`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'密钥'</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`uk_configinfo_datagrouptenant`</span> <span class="p">(</span><span class="nv">`data_id`</span><span class="p">,</span><span class="nv">`group_id`</span><span class="p">,</span><span class="nv">`tenant_id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">COMMENT</span><span class="o">=</span><span class="s1">'config_info'</span><span class="p">;</span>
+
+<span class="cm">/******************************************/</span>
+<span class="cm">/*   表名称 = config_info  since 2.5.0                */</span>
+<span class="cm">/******************************************/</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`config_info_gray`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>                 <span class="nb">bigint</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span> <span class="k">COMMENT</span> <span class="s1">'id'</span><span class="p">,</span>
+    <span class="nv">`data_id`</span>            <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'data_id'</span><span class="p">,</span>
+    <span class="nv">`group_id`</span>           <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'group_id'</span><span class="p">,</span>
+    <span class="nv">`content`</span>            <span class="nb">longtext</span>     <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'content'</span><span class="p">,</span>
+    <span class="nv">`md5`</span>                <span class="nb">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>           <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'md5'</span><span class="p">,</span>
+    <span class="nv">`src_user`</span>           <span class="nb">text</span> <span class="k">COMMENT</span> <span class="s1">'src_user'</span><span class="p">,</span>
+    <span class="nv">`src_ip`</span>             <span class="nb">varchar</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>          <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'src_ip'</span><span class="p">,</span>
+    <span class="nv">`gmt_create`</span>         <span class="nb">datetime</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">COMMENT</span> <span class="s1">'gmt_create'</span><span class="p">,</span>
+    <span class="nv">`gmt_modified`</span>       <span class="nb">datetime</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">COMMENT</span> <span class="s1">'gmt_modified'</span><span class="p">,</span>
+    <span class="nv">`app_name`</span>           <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>          <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'app_name'</span><span class="p">,</span>
+    <span class="nv">`tenant_id`</span>          <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>          <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'tenant_id'</span><span class="p">,</span>
+    <span class="nv">`gray_name`</span>          <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'gray_name'</span><span class="p">,</span>
+    <span class="nv">`gray_rule`</span>          <span class="nb">text</span>         <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'gray_rule'</span><span class="p">,</span>
+    <span class="nv">`encrypted_data_key`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'encrypted_data_key'</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`uk_configinfogray_datagrouptenantgray`</span> <span class="p">(</span><span class="nv">`data_id`</span><span class="p">,</span><span class="nv">`group_id`</span><span class="p">,</span><span class="nv">`tenant_id`</span><span class="p">,</span><span class="nv">`gray_name`</span><span class="p">),</span>
+    <span class="k">KEY</span>                  <span class="nv">`idx_dataid_gmt_modified`</span> <span class="p">(</span><span class="nv">`data_id`</span><span class="p">,</span><span class="nv">`gmt_modified`</span><span class="p">),</span>
+    <span class="k">KEY</span>                  <span class="nv">`idx_gmt_modified`</span> <span class="p">(</span><span class="nv">`gmt_modified`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="n">AUTO_INCREMENT</span><span class="o">=</span><span class="mi">1</span> <span class="k">COMMENT</span><span class="o">=</span><span class="s1">'config_info_gray'</span><span class="p">;</span>
+
+<span class="cm">/******************************************/</span>
+<span class="cm">/*   表名称 = config_tags_relation         */</span>
+<span class="cm">/******************************************/</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`config_tags_relation`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>        <span class="nb">bigint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'id'</span><span class="p">,</span>
+    <span class="nv">`tag_name`</span>  <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'tag_name'</span><span class="p">,</span>
+    <span class="nv">`tag_type`</span>  <span class="nb">varchar</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>  <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'tag_type'</span><span class="p">,</span>
+    <span class="nv">`data_id`</span>   <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'data_id'</span><span class="p">,</span>
+    <span class="nv">`group_id`</span>  <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'group_id'</span><span class="p">,</span>
+    <span class="nv">`tenant_id`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'tenant_id'</span><span class="p">,</span>
+    <span class="nv">`nid`</span>       <span class="nb">bigint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span> <span class="k">COMMENT</span> <span class="s1">'nid, 自增长标识'</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`nid`</span><span class="p">),</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`uk_configtagrelation_configidtag`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span><span class="nv">`tag_name`</span><span class="p">,</span><span class="nv">`tag_type`</span><span class="p">),</span>
+    <span class="k">KEY</span>         <span class="nv">`idx_tenant_id`</span> <span class="p">(</span><span class="nv">`tenant_id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">COMMENT</span><span class="o">=</span><span class="s1">'config_tag_relation'</span><span class="p">;</span>
+
+<span class="cm">/******************************************/</span>
+<span class="cm">/*   表名称 = group_capacity               */</span>
+<span class="cm">/******************************************/</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`group_capacity`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>                <span class="nb">bigint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span> <span class="k">COMMENT</span> <span class="s1">'主键ID'</span><span class="p">,</span>
+    <span class="nv">`group_id`</span>          <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'Group ID，空字符表示整个集群'</span><span class="p">,</span>
+    <span class="nv">`quota`</span>             <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'配额，0表示使用默认值'</span><span class="p">,</span>
+    <span class="nv">`usage`</span>             <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'使用量'</span><span class="p">,</span>
+    <span class="nv">`max_size`</span>          <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'单个配置大小上限，单位为字节，0表示使用默认值'</span><span class="p">,</span>
+    <span class="nv">`max_aggr_count`</span>    <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'聚合子配置最大个数，，0表示使用默认值'</span><span class="p">,</span>
+    <span class="nv">`max_aggr_size`</span>     <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'单个聚合数据的子配置大小上限，单位为字节，0表示使用默认值'</span><span class="p">,</span>
+    <span class="nv">`max_history_count`</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'最大变更历史数量'</span><span class="p">,</span>
+    <span class="nv">`gmt_create`</span>        <span class="nb">datetime</span>     <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span> <span class="k">COMMENT</span> <span class="s1">'创建时间'</span><span class="p">,</span>
+    <span class="nv">`gmt_modified`</span>      <span class="nb">datetime</span>     <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span> <span class="k">COMMENT</span> <span class="s1">'修改时间'</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`uk_group_id`</span> <span class="p">(</span><span class="nv">`group_id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">COMMENT</span><span class="o">=</span><span class="s1">'集群、各Group容量信息表'</span><span class="p">;</span>
+
+<span class="cm">/******************************************/</span>
+<span class="cm">/*   表名称 = his_config_info              */</span>
+<span class="cm">/******************************************/</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`his_config_info`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>                 <span class="nb">bigint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'id'</span><span class="p">,</span>
+    <span class="nv">`nid`</span>                <span class="nb">bigint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span> <span class="k">COMMENT</span> <span class="s1">'nid, 自增标识'</span><span class="p">,</span>
+    <span class="nv">`data_id`</span>            <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'data_id'</span><span class="p">,</span>
+    <span class="nv">`group_id`</span>           <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'group_id'</span><span class="p">,</span>
+    <span class="nv">`app_name`</span>           <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>           <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'app_name'</span><span class="p">,</span>
+    <span class="nv">`content`</span>            <span class="nb">longtext</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'content'</span><span class="p">,</span>
+    <span class="nv">`md5`</span>                <span class="nb">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>            <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'md5'</span><span class="p">,</span>
+    <span class="nv">`gmt_create`</span>         <span class="nb">datetime</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span> <span class="k">COMMENT</span> <span class="s1">'创建时间'</span><span class="p">,</span>
+    <span class="nv">`gmt_modified`</span>       <span class="nb">datetime</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span> <span class="k">COMMENT</span> <span class="s1">'修改时间'</span><span class="p">,</span>
+    <span class="nv">`src_user`</span>           <span class="nb">text</span> <span class="k">COMMENT</span> <span class="s1">'source user'</span><span class="p">,</span>
+    <span class="nv">`src_ip`</span>             <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>            <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'source ip'</span><span class="p">,</span>
+    <span class="nv">`op_type`</span>            <span class="nb">char</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>               <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'operation type'</span><span class="p">,</span>
+    <span class="nv">`tenant_id`</span>          <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>           <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'租户字段'</span><span class="p">,</span>
+    <span class="nv">`encrypted_data_key`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'密钥'</span><span class="p">,</span>
+    <span class="nv">`publish_type`</span>       <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>            <span class="k">DEFAULT</span> <span class="s1">'formal'</span> <span class="k">COMMENT</span> <span class="s1">'publish type gray or formal'</span><span class="p">,</span>
+    <span class="nv">`gray_name`</span>          <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>            <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'gray name'</span><span class="p">,</span>
+    <span class="nv">`ext_info`</span>           <span class="nb">longtext</span>               <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'ext info'</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`nid`</span><span class="p">),</span>
+    <span class="k">KEY</span>                  <span class="nv">`idx_gmt_create`</span> <span class="p">(</span><span class="nv">`gmt_create`</span><span class="p">),</span>
+    <span class="k">KEY</span>                  <span class="nv">`idx_gmt_modified`</span> <span class="p">(</span><span class="nv">`gmt_modified`</span><span class="p">),</span>
+    <span class="k">KEY</span>                  <span class="nv">`idx_did`</span> <span class="p">(</span><span class="nv">`data_id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">COMMENT</span><span class="o">=</span><span class="s1">'多租户改造'</span><span class="p">;</span>
+
+
+<span class="cm">/******************************************/</span>
+<span class="cm">/*   表名称 = tenant_capacity              */</span>
+<span class="cm">/******************************************/</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`tenant_capacity`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>                <span class="nb">bigint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span> <span class="k">COMMENT</span> <span class="s1">'主键ID'</span><span class="p">,</span>
+    <span class="nv">`tenant_id`</span>         <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'Tenant ID'</span><span class="p">,</span>
+    <span class="nv">`quota`</span>             <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'配额，0表示使用默认值'</span><span class="p">,</span>
+    <span class="nv">`usage`</span>             <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'使用量'</span><span class="p">,</span>
+    <span class="nv">`max_size`</span>          <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'单个配置大小上限，单位为字节，0表示使用默认值'</span><span class="p">,</span>
+    <span class="nv">`max_aggr_count`</span>    <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'聚合子配置最大个数'</span><span class="p">,</span>
+    <span class="nv">`max_aggr_size`</span>     <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'单个聚合数据的子配置大小上限，单位为字节，0表示使用默认值'</span><span class="p">,</span>
+    <span class="nv">`max_history_count`</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="nb">unsigned</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'最大变更历史数量'</span><span class="p">,</span>
+    <span class="nv">`gmt_create`</span>        <span class="nb">datetime</span>     <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span> <span class="k">COMMENT</span> <span class="s1">'创建时间'</span><span class="p">,</span>
+    <span class="nv">`gmt_modified`</span>      <span class="nb">datetime</span>     <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span> <span class="k">COMMENT</span> <span class="s1">'修改时间'</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`uk_tenant_id`</span> <span class="p">(</span><span class="nv">`tenant_id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">COMMENT</span><span class="o">=</span><span class="s1">'租户容量信息表'</span><span class="p">;</span>
+
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`tenant_info`</span>
+<span class="p">(</span>
+    <span class="nv">`id`</span>            <span class="nb">bigint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span> <span class="k">COMMENT</span> <span class="s1">'id'</span><span class="p">,</span>
+    <span class="nv">`kp`</span>            <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'kp'</span><span class="p">,</span>
+    <span class="nv">`tenant_id`</span>     <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">default</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'tenant_id'</span><span class="p">,</span>
+    <span class="nv">`tenant_name`</span>   <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">default</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'tenant_name'</span><span class="p">,</span>
+    <span class="nv">`tenant_desc`</span>   <span class="nb">varchar</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'tenant_desc'</span><span class="p">,</span>
+    <span class="nv">`create_source`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>  <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'create_source'</span><span class="p">,</span>
+    <span class="nv">`gmt_create`</span>    <span class="nb">bigint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'创建时间'</span><span class="p">,</span>
+    <span class="nv">`gmt_modified`</span>  <span class="nb">bigint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'修改时间'</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`uk_tenant_info_kptenantid`</span> <span class="p">(</span><span class="nv">`kp`</span><span class="p">,</span><span class="nv">`tenant_id`</span><span class="p">),</span>
+    <span class="k">KEY</span>             <span class="nv">`idx_tenant_id`</span> <span class="p">(</span><span class="nv">`tenant_id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">COMMENT</span><span class="o">=</span><span class="s1">'tenant_info'</span><span class="p">;</span>
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`users`</span>
+<span class="p">(</span>
+    <span class="nv">`username`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="k">COMMENT</span> <span class="s1">'username'</span><span class="p">,</span>
+    <span class="nv">`password`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'password'</span><span class="p">,</span>
+    <span class="nv">`enabled`</span>  <span class="nb">boolean</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'enabled'</span>
+<span class="p">);</span>
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`roles`</span>
+<span class="p">(</span>
+    <span class="nv">`username`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'username'</span><span class="p">,</span>
+    <span class="nv">`role`</span>     <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'role'</span><span class="p">,</span>
+    <span class="k">UNIQUE</span> <span class="k">INDEX</span> <span class="nv">`idx_user_role`</span> <span class="p">(</span><span class="nv">`username`</span> <span class="k">ASC</span><span class="p">,</span> <span class="nv">`role`</span> <span class="k">ASC</span><span class="p">)</span> <span class="k">USING</span> <span class="n">BTREE</span>
+<span class="p">);</span>
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`permissions`</span>
+<span class="p">(</span>
+    <span class="nv">`role`</span>     <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>  <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'role'</span><span class="p">,</span>
+    <span class="nv">`resource`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'resource'</span><span class="p">,</span>
+    <span class="nv">`action`</span>   <span class="nb">varchar</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>   <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'action'</span><span class="p">,</span>
+    <span class="k">UNIQUE</span> <span class="k">INDEX</span> <span class="nv">`uk_role_permission`</span> <span class="p">(</span><span class="nv">`role`</span><span class="p">,</span><span class="nv">`resource`</span><span class="p">,</span><span class="nv">`action`</span><span class="p">)</span> <span class="k">USING</span> <span class="n">BTREE</span>
+<span class="p">);</span>
+
+<span class="cm">/* 源文件：https://github.com/alibaba/nacos/blob/3.0.0/distribution/conf/mysql-schema.sql 到此为止*/</span>
+
+<span class="cm">/* 以下导入 Seata 配置信息（含 NACOS管理员信息） */</span>
+
+<span class="c1">-- MySQL dump 10.13  Distrib 8.4.5, for macos14.7 (x86_64)</span>
+<span class="c1">--</span>
+<span class="c1">-- Host: 127.0.0.1    Database: db_nacos</span>
+<span class="c1">-- ------------------------------------------------------</span>
+<span class="c1">-- Server version	8.4.5</span>
+
+<span class="c1">--</span>
+<span class="c1">-- Dumping data for table `config_info`</span>
+<span class="c1">--</span>
+
+<span class="k">LOCK</span> <span class="n">TABLES</span> <span class="nv">`config_info`</span> <span class="k">WRITE</span><span class="p">;</span>
+<span class="cm">/*!40000 ALTER TABLE `config_info` DISABLE KEYS */</span><span class="p">;</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`config_info`</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">'seataServer.properties'</span><span class="p">,</span><span class="s1">'SEATA_GROUP'</span><span class="p">,</span><span class="s1">'store.mode=db</span><span class="se">\n</span><span class="s1">store.session.mode=db</span><span class="se">\n</span><span class="s1">store.lock.mode=db</span><span class="se">\n</span><span class="s1">#-----db-----</span><span class="se">\n</span><span class="s1"># 修改成 hikari 报错</span><span class="se">\n</span><span class="s1">store.db.datasource=hikari</span><span class="se">\n</span><span class="s1">store.db.dbType=mysql</span><span class="se">\n</span><span class="s1"># 需要根据mysql的版本调整driverClassName</span><span class="se">\n</span><span class="s1"># mysql8及以上版本对应的driver：com.mysql.cj.jdbc.Driver</span><span class="se">\n</span><span class="s1"># mysql8以下版本的driver：com.mysql.jdbc.Driver</span><span class="se">\n</span><span class="s1">store.db.driverClassName=com.mysql.cj.jdbc.Driver</span><span class="se">\n</span><span class="s1">store.db.url=jdbc:mysql://mysql-seata:3306/db_seata?useUnicode=true&amp;characterEncoding=utf8&amp;connectTimeout=1000&amp;socketTimeout=3000&amp;autoReconnect=true&amp;useSSL=false&amp;allowPublicKeyRetrieval=true</span><span class="se">\n</span><span class="s1">store.db.user=admin_seata</span><span class="se">\n</span><span class="s1">store.db.password=123456</span><span class="se">\n</span><span class="s1"># 数据库初始连接数</span><span class="se">\n</span><span class="s1">store.db.minConn=1</span><span class="se">\n</span><span class="s1"># 数据库最大连接数</span><span class="se">\n</span><span class="s1">store.db.maxConn=10</span><span class="se">\n</span><span class="s1"># 获取连接时最大等待时间 默认5000，单位毫秒</span><span class="se">\n</span><span class="s1">store.db.maxWait=5000</span><span class="se">\n</span><span class="s1"># 查询全局事务一次的最大条数 默认100</span><span class="se">\n</span><span class="s1">store.db.queryLimit=100</span><span class="se">\n</span><span class="s1"># 全局事务表名 默认global_table</span><span class="se">\n</span><span class="s1">store.db.globalTable=global_table</span><span class="se">\n</span><span class="s1"># 分支事务表名 默认branch_table</span><span class="se">\n</span><span class="s1">store.db.branchTable=branch_table</span><span class="se">\n</span><span class="s1"># 全局锁表名 默认lock_table</span><span class="se">\n</span><span class="s1">store.db.lockTable=lock_table</span><span class="se">\n</span><span class="s1">store.db.distributedLockTable=distributed_lock</span><span class="se">\n</span><span class="s1">store.db.vgroupTable=vgroup_table</span><span class="se">\n\n</span><span class="s1">store.db.hikari.idleTimeout=600000</span><span class="se">\n</span><span class="s1">store.db.hikari.keepaliveTime=120000</span><span class="se">\n</span><span class="s1">store.db.hikari.maxLifetime=1800000</span><span class="se">\n</span><span class="s1">store.db.hikari.validationTimeout=5000</span><span class="se">\n\n\n</span><span class="s1"># undo保留天数 默认7天,log_status=1（附录3）和未正常清理的undo</span><span class="se">\n</span><span class="s1">server.undo.logSaveDays=7</span><span class="se">\n</span><span class="s1"># undo清理线程间隔时间 默认86400000，单位毫秒</span><span class="se">\n</span><span class="s1">server.undo.logDeletePeriod=86400000</span><span class="se">\n</span><span class="s1"># 二阶段提交重试超时时长 单位ms,s,m,h,d,对应毫秒,秒,分,小时,天,默认毫秒。默认值-1表示无限重试</span><span class="se">\n</span><span class="s1"># 公式: timeout&gt;=now-globalTransactionBeginTime,true表示超时则不再重试</span><span class="se">\n</span><span class="s1"># 注: 达到超时时间后将不会做任何重试,有数据不一致风险,除非业务自行可校准数据,否者慎用</span><span class="se">\n</span><span class="s1">server.maxCommitRetryTimeout=-1</span><span class="se">\n</span><span class="s1"># 二阶段回滚重试超时时长</span><span class="se">\n</span><span class="s1">server.maxRollbackRetryTimeout=-1</span><span class="se">\n</span><span class="s1"># 二阶段提交未完成状态全局事务重试提交线程间隔时间 默认1000，单位毫秒</span><span class="se">\n</span><span class="s1">server.recovery.committingRetryPeriod=1000</span><span class="se">\n</span><span class="s1"># 二阶段异步提交状态重试提交线程间隔时间 默认1000，单位毫秒</span><span class="se">\n</span><span class="s1">server.recovery.asynCommittingRetryPeriod=1000</span><span class="se">\n</span><span class="s1"># 二阶段回滚状态重试回滚线程间隔时间  默认1000，单位毫秒</span><span class="se">\n</span><span class="s1">server.recovery.rollbackingRetryPeriod=1000</span><span class="se">\n</span><span class="s1"># 超时状态检测重试线程间隔时间 默认1000，单位毫秒，检测出超时将全局事务置入回滚会话管理器</span><span class="se">\n</span><span class="s1">server.recovery.timeoutRetryPeriod=1000</span><span class="se">\n\n</span><span class="s1">'</span><span class="p">,</span><span class="s1">'8ef450870dbe476207527b2ad3b0e612'</span><span class="p">,</span><span class="s1">'2025-06-09 14:16:56'</span><span class="p">,</span><span class="s1">'2025-07-07 16:22:50'</span><span class="p">,</span><span class="s1">'nacos'</span><span class="p">,</span><span class="s1">'192.168.65.1'</span><span class="p">,</span><span class="s1">''</span><span class="p">,</span><span class="s1">'seata-server'</span><span class="p">,</span><span class="s1">''</span><span class="p">,</span><span class="k">NULL</span><span class="p">,</span><span class="k">NULL</span><span class="p">,</span><span class="s1">'properties'</span><span class="p">,</span><span class="k">NULL</span><span class="p">,</span><span class="s1">''</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'seataServer.yaml'</span><span class="p">,</span><span class="s1">'SEATA_GROUP'</span><span class="p">,</span><span class="s1">'store:</span><span class="se">\n</span><span class="s1">  mode: db</span><span class="se">\n</span><span class="s1">  session:</span><span class="se">\n</span><span class="s1">    mode: db</span><span class="se">\n</span><span class="s1">  lock:</span><span class="se">\n</span><span class="s1">    mode: db</span><span class="se">\n</span><span class="s1">  db:</span><span class="se">\n</span><span class="s1">    datasource: hikari</span><span class="se">\n</span><span class="s1">    dbType: mysql</span><span class="se">\n</span><span class="s1">    driverClassName: com.mysql.cj.jdbc.Driver</span><span class="se">\n</span><span class="s1">    url: jdbc:mysql://localhost:3396/db_seata?useUnicode=true&amp;characterEncoding=utf8&amp;connectTimeout=1000&amp;socketTimeout=3000&amp;autoReconnect=true&amp;useSSL=false&amp;allowPublicKeyRetrieval=true</span><span class="se">\n</span><span class="s1">    user: admin_seata</span><span class="se">\n</span><span class="s1">    password: </span><span class="se">\"</span><span class="s1">123456</span><span class="se">\"\n</span><span class="s1">    minConn: 1</span><span class="se">\n</span><span class="s1">    maxConn: 10</span><span class="se">\n</span><span class="s1">    globalTable: global_table</span><span class="se">\n</span><span class="s1">    branchTable: branch_table</span><span class="se">\n</span><span class="s1">    lockTable: lock_table</span><span class="se">\n</span><span class="s1">    distributedLockTable: distributed_lock</span><span class="se">\n</span><span class="s1">    vgroupTable: vgroup_table</span><span class="se">\n</span><span class="s1">    queryLimit: 1000</span><span class="se">\n</span><span class="s1">    maxWait: 5000</span><span class="se">\n</span><span class="s1">    hikari:</span><span class="se">\n</span><span class="s1">      idleTimeout: 600000</span><span class="se">\n</span><span class="s1">      keepaliveTime: 120000</span><span class="se">\n</span><span class="s1">      maxLifetime: 1800000</span><span class="se">\n</span><span class="s1">      validationTimeout: 5000'</span><span class="p">,</span><span class="s1">'09d8928c6b704bd68acd856c55efca52'</span><span class="p">,</span><span class="s1">'2025-07-06 10:27:55'</span><span class="p">,</span><span class="s1">'2025-07-07 16:23:33'</span><span class="p">,</span><span class="s1">'nacos'</span><span class="p">,</span><span class="s1">'192.168.65.1'</span><span class="p">,</span><span class="s1">''</span><span class="p">,</span><span class="s1">'seata-server'</span><span class="p">,</span><span class="s1">''</span><span class="p">,</span><span class="k">NULL</span><span class="p">,</span><span class="k">NULL</span><span class="p">,</span><span class="s1">'yaml'</span><span class="p">,</span><span class="k">NULL</span><span class="p">,</span><span class="s1">''</span><span class="p">);</span>
+<span class="cm">/*!40000 ALTER TABLE `config_info` ENABLE KEYS */</span><span class="p">;</span>
+<span class="n">UNLOCK</span> <span class="n">TABLES</span><span class="p">;</span>
+
+<span class="c1">--</span>
+<span class="c1">-- Dumping data for table `group_capacity`</span>
+<span class="c1">--</span>
+
+<span class="k">LOCK</span> <span class="n">TABLES</span> <span class="nv">`group_capacity`</span> <span class="k">WRITE</span><span class="p">;</span>
+<span class="cm">/*!40000 ALTER TABLE `group_capacity` DISABLE KEYS */</span><span class="p">;</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`group_capacity`</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">''</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="s1">'2025-06-09 10:15:15'</span><span class="p">,</span><span class="s1">'2025-06-10 07:49:54'</span><span class="p">);</span>
+<span class="cm">/*!40000 ALTER TABLE `group_capacity` ENABLE KEYS */</span><span class="p">;</span>
+<span class="n">UNLOCK</span> <span class="n">TABLES</span><span class="p">;</span>
+
+
+<span class="c1">--</span>
+<span class="c1">-- Dumping data for table `permissions`</span>
+<span class="c1">--</span>
+
+<span class="k">LOCK</span> <span class="n">TABLES</span> <span class="nv">`permissions`</span> <span class="k">WRITE</span><span class="p">;</span>
+<span class="cm">/*!40000 ALTER TABLE `permissions` DISABLE KEYS */</span><span class="p">;</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`permissions`</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">'ROLE_SEATA'</span><span class="p">,</span><span class="s1">'seata-server:*:*'</span><span class="p">,</span><span class="s1">'rw'</span><span class="p">);</span>
+<span class="cm">/*!40000 ALTER TABLE `permissions` ENABLE KEYS */</span><span class="p">;</span>
+<span class="n">UNLOCK</span> <span class="n">TABLES</span><span class="p">;</span>
+
+<span class="c1">--</span>
+<span class="c1">-- Dumping data for table `roles`</span>
+<span class="c1">--</span>
+
+<span class="k">LOCK</span> <span class="n">TABLES</span> <span class="nv">`roles`</span> <span class="k">WRITE</span><span class="p">;</span>
+<span class="cm">/*!40000 ALTER TABLE `roles` DISABLE KEYS */</span><span class="p">;</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`roles`</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">'nacos'</span><span class="p">,</span><span class="s1">'ROLE_ADMIN'</span><span class="p">),(</span><span class="s1">'seata'</span><span class="p">,</span><span class="s1">'ROLE_SEATA'</span><span class="p">);</span>
+<span class="cm">/*!40000 ALTER TABLE `roles` ENABLE KEYS */</span><span class="p">;</span>
+<span class="n">UNLOCK</span> <span class="n">TABLES</span><span class="p">;</span>
+
+<span class="c1">--</span>
+<span class="c1">-- Dumping data for table `tenant_capacity`</span>
+<span class="c1">--</span>
+
+<span class="k">LOCK</span> <span class="n">TABLES</span> <span class="nv">`tenant_capacity`</span> <span class="k">WRITE</span><span class="p">;</span>
+<span class="cm">/*!40000 ALTER TABLE `tenant_capacity` DISABLE KEYS */</span><span class="p">;</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`tenant_capacity`</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">'seata-server'</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="s1">'2025-06-09 10:15:15'</span><span class="p">,</span><span class="s1">'2025-06-10 07:49:54'</span><span class="p">);</span>
+<span class="cm">/*!40000 ALTER TABLE `tenant_capacity` ENABLE KEYS */</span><span class="p">;</span>
+<span class="n">UNLOCK</span> <span class="n">TABLES</span><span class="p">;</span>
+
+<span class="c1">--</span>
+<span class="c1">-- Dumping data for table `tenant_info`</span>
+<span class="c1">--</span>
+
+<span class="k">LOCK</span> <span class="n">TABLES</span> <span class="nv">`tenant_info`</span> <span class="k">WRITE</span><span class="p">;</span>
+<span class="cm">/*!40000 ALTER TABLE `tenant_info` DISABLE KEYS */</span><span class="p">;</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`tenant_info`</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">'2'</span><span class="p">,</span><span class="s1">'nacos-default-mcp'</span><span class="p">,</span><span class="s1">'nacos-default-mcp'</span><span class="p">,</span><span class="s1">'Nacos default AI MCP module.'</span><span class="p">,</span><span class="s1">'nacos'</span><span class="p">,</span><span class="mi">1749434747652</span><span class="p">,</span><span class="mi">1749434747652</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'1'</span><span class="p">,</span><span class="s1">'seata-server'</span><span class="p">,</span><span class="s1">'seata-server'</span><span class="p">,</span><span class="s1">'seata-server'</span><span class="p">,</span><span class="s1">'nacos'</span><span class="p">,</span><span class="mi">1749435059010</span><span class="p">,</span><span class="mi">1749435059010</span><span class="p">);</span>
+<span class="cm">/*!40000 ALTER TABLE `tenant_info` ENABLE KEYS */</span><span class="p">;</span>
+<span class="n">UNLOCK</span> <span class="n">TABLES</span><span class="p">;</span>
+
+<span class="c1">--</span>
+<span class="c1">-- Dumping data for table `users`</span>
+<span class="c1">--</span>
+
+<span class="k">LOCK</span> <span class="n">TABLES</span> <span class="nv">`users`</span> <span class="k">WRITE</span><span class="p">;</span>
+<span class="cm">/*!40000 ALTER TABLE `users` DISABLE KEYS */</span><span class="p">;</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`users`</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">'nacos'</span><span class="p">,</span><span class="s1">'$2a$10$OLjDASIyFwZt.CWEZvHpUOhIqns6okVnPoeNnkD3dREa2PkIOX8NW'</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="s1">'seata'</span><span class="p">,</span><span class="s1">'$2a$10$GaGtP8KW4jNZrRznKqR04.opS2792ECeYR9fqy9EoZV1iXK12ydDy'</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<span class="cm">/*!40000 ALTER TABLE `users` ENABLE KEYS */</span><span class="p">;</span>
+<span class="n">UNLOCK</span> <span class="n">TABLES</span><span class="p">;</span>
+
+<span class="cm">/* Seata 配置信息到此为止 */</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Dockerfile 配置文件：</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 6. <code>docker/images/mysql-nacos.dockerfile</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="docker"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="k">FROM</span><span class="s"> bitnami/mysql:8.4</span>
+
+<span class="k">ADD</span><span class="s"> ./config/nacos/nacos-schema.sql /docker-entrypoint-initdb.d/nacos-schema.sql</span>
+
+<span class="c"># https://github.com/bitnami/containers/blob/main/bitnami/mysql/9.3/debian-12/Dockerfile</span>
+<span class="k">EXPOSE</span><span class="s"> 3306</span>
+<span class="k">USER</span><span class="s"> 1001</span>
+<span class="k">ENTRYPOINT</span><span class="s"> [ "/opt/bitnami/scripts/mysql/entrypoint.sh" ]</span>
+<span class="k">CMD</span><span class="s"> [ "/opt/bitnami/scripts/mysql/run.sh" ]</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>NACOS 的配置文件：</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 7. <code>docker/env/nacos.env</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="bash"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+</pre></td><td class="code"><pre><span class="nv">PREFER_HOST_MODE</span><span class="o">=</span><span class="nb">hostname
+</span><span class="nv">MODE</span><span class="o">=</span>standalone
+<span class="nv">SPRING_DATASOURCE_PLATFORM</span><span class="o">=</span>mysql
+<span class="nv">MYSQL_SERVICE_HOST</span><span class="o">=</span>mysql-nacos
+<span class="nv">MYSQL_SERVICE_DB_NAME</span><span class="o">=</span>db_nacos
+<span class="nv">MYSQL_SERVICE_PORT</span><span class="o">=</span>3306
+<span class="nv">MYSQL_SERVICE_USER</span><span class="o">=</span>admin_nacos
+<span class="nv">MYSQL_SERVICE_PASSWORD</span><span class="o">=</span>123456
+<span class="nv">MYSQL_SERVICE_DB_PARAM</span><span class="o">=</span><span class="nv">characterEncoding</span><span class="o">=</span>utf8&amp;connectTimeout<span class="o">=</span>1000&amp;socketTimeout<span class="o">=</span>3000&amp;autoReconnect<span class="o">=</span><span class="nb">true</span>&amp;useUnicode<span class="o">=</span><span class="nb">true</span>&amp;useSSL<span class="o">=</span><span class="nb">false</span>&amp;serverTimezone<span class="o">=</span>Asia/Shanghai&amp;allowPublicKeyRetrieval<span class="o">=</span><span class="nb">true</span>&amp;useSSL<span class="o">=</span><span class="nb">false
+</span><span class="nv">NACOS_AUTH_IDENTITY_KEY</span><span class="o">=</span>serverIdentity
+<span class="nv">NACOS_AUTH_IDENTITY_VALUE</span><span class="o">=</span>security
+<span class="nv">NACOS_AUTH_TOKEN</span><span class="o">=</span>SecretKey012345678901234567890123456789012345678901234567890123456789
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">代码 8. <code>docker/config/nacos/application.properties</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="bash"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno">  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+ 78
+ 79
+ 80
+ 81
+ 82
+ 83
+ 84
+ 85
+ 86
+ 87
+ 88
+ 89
+ 90
+ 91
+ 92
+ 93
+ 94
+ 95
+ 96
+ 97
+ 98
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+</pre></td><td class="code"><pre><span class="c">#--------------- Nacos Common Configurations ---------------#</span>
+
+<span class="c">#*************** Nacos port Related Configurations ***************#</span>
+<span class="c">### Nacos Server Main port</span>
+nacos.server.main.port<span class="o">=</span><span class="k">${</span><span class="nv">NACOS_APPLICATION_PORT</span>:8848<span class="k">}</span>
+
+<span class="c">#*************** Network Related Configurations ***************#</span>
+<span class="c">### If prefer hostname over ip for Nacos server addresses in cluster.conf:</span>
+<span class="c"># nacos.inetutils.prefer-hostname-over-ip=false</span>
+
+<span class="c">### Specify local server's IP:</span>
+<span class="c"># nacos.inetutils.ip-address=</span>
+
+<span class="c">#*************** Datasource Related Configurations ***************#</span>
+<span class="c">### nacos.plugin.datasource.log.enabled=true</span>
+spring.sql.init.platform<span class="o">=</span><span class="k">${</span><span class="nv">SPRING_DATASOURCE_PLATFORM</span>:<span class="k">}</span>
+<span class="c">### Count of DB:</span>
+<span class="c"># db.num=1</span>
+
+<span class="c">### Connect URL of DB:</span>
+db.num<span class="o">=</span><span class="k">${</span><span class="nv">MYSQL_DATABASE_NUM</span>:1<span class="k">}</span>
+db.url.0<span class="o">=</span>jdbc:mysql://<span class="k">${</span><span class="nv">MYSQL_SERVICE_HOST</span><span class="k">}</span>:<span class="k">${</span><span class="nv">MYSQL_SERVICE_PORT</span>:3306<span class="k">}</span>/<span class="k">${</span><span class="nv">MYSQL_SERVICE_DB_NAME</span><span class="k">}</span>?<span class="k">${</span><span class="nv">MYSQL_SERVICE_DB_PARAM</span>:characterEncoding<span class="p">=utf8&amp;connectTimeout=1000&amp;socketTimeout=3000&amp;autoReconnect=true&amp;useSSL=false</span><span class="k">}</span>
+db.user.0<span class="o">=</span><span class="k">${</span><span class="nv">MYSQL_SERVICE_USER</span><span class="k">}</span>
+db.password.0<span class="o">=</span><span class="k">${</span><span class="nv">MYSQL_SERVICE_PASSWORD</span><span class="k">}</span>
+
+db.pool.config.connectionTimeout<span class="o">=</span><span class="k">${</span><span class="nv">DB_POOL_CONNECTION_TIMEOUT</span>:30000<span class="k">}</span>
+db.pool.config.validationTimeout<span class="o">=</span>10000
+db.pool.config.maximumPoolSize<span class="o">=</span>20
+db.pool.config.minimumIdle<span class="o">=</span>2
+
+<span class="c">#*************** Metrics Related Configurations ***************#</span>
+<span class="c">### Metrics for prometheus</span>
+management.endpoints.web.exposure.include<span class="o">=</span>prometheus
+
+<span class="c">### Metrics for elastic search</span>
+management.metrics.export.elastic.enabled<span class="o">=</span><span class="nb">false</span>
+<span class="c">#management.metrics.export.elastic.host=http://localhost:9200</span>
+
+<span class="c">### Metrics for influx</span>
+management.metrics.export.influx.enabled<span class="o">=</span><span class="nb">false</span>
+<span class="c">#management.metrics.export.influx.db=springboot</span>
+<span class="c">#management.metrics.export.influx.uri=http://localhost:8086</span>
+<span class="c">#management.metrics.export.influx.auto-create-db=true</span>
+<span class="c">#management.metrics.export.influx.consistency=one</span>
+<span class="c">#management.metrics.export.influx.compressed=true</span>
+
+<span class="c">#*************** Core Related Configurations ***************#</span>
+
+<span class="c">### set the WorkerID manually</span>
+<span class="c"># nacos.core.snowflake.worker-id=</span>
+
+<span class="c">### Member-MetaData</span>
+<span class="c"># nacos.core.member.meta.site=</span>
+<span class="c"># nacos.core.member.meta.adweight=</span>
+<span class="c"># nacos.core.member.meta.weight=</span>
+
+<span class="c">### MemberLookup</span>
+<span class="c">### Addressing pattern category, If set, the priority is highest</span>
+<span class="c"># nacos.core.member.lookup.type=[file,address-server]</span>
+
+<span class="c">## Set the cluster list with a configuration file or command-line argument</span>
+<span class="c"># nacos.member.list=192.168.16.101:8847?raft_port=8807,192.168.16.101?raft_port=8808,192.168.16.101:8849?raft_port=8809</span>
+
+<span class="c">## for AddressServerMemberLookup</span>
+<span class="c"># Maximum number of retries to query the address server upon initialization</span>
+<span class="c"># nacos.core.address-server.retry=5</span>
+<span class="c">## Server domain name address of [address-server] mode</span>
+<span class="c"># address.server.domain=jmenv.tbsite.net</span>
+<span class="c">## Server port of [address-server] mode</span>
+<span class="c"># address.server.port=8080</span>
+<span class="c">## Request address of [address-server] mode</span>
+<span class="c"># address.server.url=/nacos/serverlist</span>
+
+<span class="c">#*************** JRaft Related Configurations ***************#</span>
+
+<span class="c">### Sets the Raft cluster election timeout, default value is 5 second</span>
+<span class="c"># nacos.core.protocol.raft.data.election_timeout_ms=5000</span>
+<span class="c">### Sets the amount of time the Raft snapshot will execute periodically, default is 30 minute</span>
+<span class="c"># nacos.core.protocol.raft.data.snapshot_interval_secs=30</span>
+<span class="c">### raft internal worker threads</span>
+<span class="c"># nacos.core.protocol.raft.data.core_thread_num=8</span>
+<span class="c">### Number of threads required for raft business request processing</span>
+<span class="c"># nacos.core.protocol.raft.data.cli_service_thread_num=4</span>
+<span class="c">### raft linear read strategy. Safe linear reads are used by default, that is, the Leader tenure is confirmed by heartbeat</span>
+<span class="c"># nacos.core.protocol.raft.data.read_index_type=ReadOnlySafe</span>
+<span class="c">### rpc request timeout, default 5 seconds</span>
+<span class="c"># nacos.core.protocol.raft.data.rpc_request_timeout_ms=5000</span>
+<span class="c">### enable to support prometheus service discovery</span>
+<span class="c">#nacos.prometheus.metrics.enabled=true</span>
+
+<span class="c">#*************** Distro Related Configurations ***************#</span>
+
+<span class="c">### Distro data sync delay time, when sync task delayed, task will be merged for same data key. Default 1 second.</span>
+<span class="c"># nacos.core.protocol.distro.data.sync.delayMs=1000</span>
+<span class="c">### Distro data sync timeout for one sync data, default 3 seconds.</span>
+<span class="c"># nacos.core.protocol.distro.data.sync.timeoutMs=3000</span>
+<span class="c">### Distro data sync retry delay time when sync data failed or timeout, same behavior with delayMs, default 3 seconds.</span>
+<span class="c"># nacos.core.protocol.distro.data.sync.retryDelayMs=3000</span>
+<span class="c">### Distro data verify interval time, verify synced data whether expired for a interval. Default 5 seconds.</span>
+<span class="c"># nacos.core.protocol.distro.data.verify.intervalMs=5000</span>
+<span class="c">### Distro data verify timeout for one verify, default 3 seconds.</span>
+<span class="c"># nacos.core.protocol.distro.data.verify.timeoutMs=3000</span>
+<span class="c">### Distro data load retry delay when load snapshot data failed, default 30 seconds.</span>
+<span class="c"># nacos.core.protocol.distro.data.load.retryDelayMs=30000</span>
+<span class="c">### enable to support prometheus service discovery</span>
+<span class="c">#nacos.prometheus.metrics.enabled=true</span>
+
+<span class="c">#*************** Grpc Configurations ***************#</span>
+
+<span class="c">### Sets the maximum message size allowed to be received on the server.</span>
+<span class="c">#nacos.remote.server.grpc.sdk.max-inbound-message-size=10485760</span>
+<span class="c">### Sets the time(milliseconds) without read activity before sending a keepalive ping. The typical default is two hours.</span>
+<span class="c">#nacos.remote.server.grpc.sdk.keep-alive-time=7200000</span>
+<span class="c">### Sets a time(milliseconds) waiting for read activity after sending a keepalive ping. Defaults to 20 seconds.</span>
+<span class="c">#nacos.remote.server.grpc.sdk.keep-alive-timeout=20000</span>
+<span class="c">### Sets a time(milliseconds) that specify the most aggressive keep-alive time clients are permitted to configure. The typical default is 5 minutes</span>
+<span class="c">#nacos.remote.server.grpc.sdk.permit-keep-alive-time=300000</span>
+<span class="c">### cluster grpc(inside the nacos server) configuration</span>
+<span class="c">#nacos.remote.server.grpc.cluster.max-inbound-message-size=10485760</span>
+<span class="c">### Sets the time(milliseconds) without read activity before sending a keepalive ping. The typical default is two hours.</span>
+<span class="c">#nacos.remote.server.grpc.cluster.keep-alive-time=7200000</span>
+<span class="c">### Sets a time(milliseconds) waiting for read activity after sending a keepalive ping. Defaults to 20 seconds.</span>
+<span class="c">#nacos.remote.server.grpc.cluster.keep-alive-timeout=20000</span>
+<span class="c">### Sets a time(milliseconds) that specify the most aggressive keep-alive time clients are permitted to configure. The typical default is 5 minutes</span>
+<span class="c">#nacos.remote.server.grpc.cluster.permit-keep-alive-time=300000</span>
+
+<span class="c">#*************** Config Module Related Configurations ***************#</span>
+
+<span class="c">### the maximum retry times for push</span>
+nacos.config.push.maxRetryTime<span class="o">=</span>50
+
+<span class="c">#*************** Naming Module Related Configurations ***************#</span>
+<span class="c">### Data dispatch task execution period in milliseconds:</span>
+
+<span class="c">### If enable data warmup. If set to false, the server would accept request without local data preparation:</span>
+nacos.naming.data.warmup<span class="o">=</span><span class="nb">true</span>
+
+<span class="c">### If enable the instance auto expiration, kind like of health check of instance:</span>
+<span class="c"># nacos.naming.expireInstance=true</span>
+
+nacos.naming.empty-service.auto-clean<span class="o">=</span><span class="nb">true
+</span>nacos.naming.empty-service.clean.initial-delay-ms<span class="o">=</span>50000
+nacos.naming.empty-service.clean.period-time-ms<span class="o">=</span>30000
+
+<span class="c">#--------------- Nacos Web Server Configurations ---------------#</span>
+
+<span class="c">#*************** Nacos Web Server Related Configurations ***************#</span>
+<span class="c">### Nacos Server Web context path:</span>
+nacos.server.contextPath<span class="o">=</span><span class="k">${</span><span class="nv">SERVER_SERVLET_CONTEXTPATH</span>:/nacos<span class="k">}</span>
+
+<span class="c">#*************** Access Log Related Configurations ***************#</span>
+<span class="c">### If turn on the access log:</span>
+server.tomcat.accesslog.enabled<span class="o">=</span><span class="nb">true</span>
+
+<span class="c">### accesslog automatic cleaning time</span>
+server.tomcat.accesslog.max-days<span class="o">=</span>30
+
+<span class="c">### The access log pattern:</span>
+server.tomcat.accesslog.pattern<span class="o">=</span>%h %l %u %t <span class="s2">"%r"</span> %s %b %D %<span class="o">{</span>User-Agent<span class="o">}</span>i %<span class="o">{</span>Request-Source<span class="o">}</span>i
+
+<span class="c">### The directory of access log:</span>
+server.tomcat.basedir<span class="o">=</span>file:.
+
+<span class="c">#*************** API Related Configurations ***************#</span>
+<span class="c">### Include message field</span>
+server.error.include-message<span class="o">=</span>ALWAYS
+
+<span class="c">### Enabled for open API compatibility</span>
+<span class="c"># nacos.core.api.compatibility.client.enabled=true</span>
+<span class="c">### Enabled for admin API compatibility</span>
+<span class="c"># nacos.core.api.compatibility.admin.enabled=false</span>
+<span class="c">### Enabled for console API compatibility</span>
+<span class="c"># nacos.core.api.compatibility.console.enabled=false</span>
+
+<span class="c">#--------------- Nacos Console Configurations ---------------#</span>
+
+<span class="c">#*************** Nacos Console Related Configurations ***************#</span>
+<span class="c">### Nacos Console Main port</span>
+nacos.console.port<span class="o">=</span><span class="k">${</span><span class="nv">NACOS_CONSOLE_PORT</span>:8080<span class="k">}</span>
+<span class="c">### Nacos Server Web context path:</span>
+nacos.console.contextPath<span class="o">=</span>
+
+<span class="c">### Nacos Server context path, which link to nacos server `nacos.server.contextPath`, works when deployment type is `console`</span>
+nacos.console.remote.server.context-path<span class="o">=</span><span class="k">${</span><span class="nv">SERVER_SERVLET_CONTEXTPATH</span>:/nacos<span class="k">}</span>
+
+<span class="c">#************** Console UI Configuration ***************#</span>
+
+<span class="c">### Turn on/off the nacos console ui.</span>
+nacos.console.ui.enabled<span class="o">=</span><span class="nb">true</span>
+
+<span class="c">#--------------- Nacos Plugin Configurations ---------------#</span>
+
+<span class="c">#*************** CMDB Plugin Related Configurations ***************#</span>
+<span class="c">### The interval to dump external CMDB in seconds:</span>
+<span class="c"># nacos.cmdb.dumpTaskInterval=3600</span>
+
+<span class="c">### The interval of polling data change event in seconds:</span>
+<span class="c"># nacos.cmdb.eventTaskInterval=10</span>
+
+<span class="c">### The interval of loading labels in seconds:</span>
+<span class="c"># nacos.cmdb.labelTaskInterval=300</span>
+
+<span class="c">### If turn on data loading task:</span>
+<span class="c"># nacos.cmdb.loadDataAtStart=false</span>
+
+<span class="c">#*************** Auth Plugin Related Configurations ***************#</span>
+<span class="c">### The ignore urls of auth, will be deprecated in the future:</span>
+nacos.security.ignore.urls<span class="o">=</span><span class="k">${</span><span class="nv">NACOS_SECURITY_IGNORE_URLS</span>:/,/error,/<span class="p">**/*.css,/**/*.js,/**/*.html,/**/*.map,/**/*.svg,/**/*.png,/**/*.ico,/console-fe/public/**,/v1/auth/**,/v1/console/health/**,/actuator/**,/v1/console/server/**</span><span class="k">}</span>
+
+<span class="c">### The auth system to use, default 'nacos' and 'ldap' is supported, other type should be implemented by yourself:</span>
+nacos.core.auth.system.type<span class="o">=</span><span class="k">${</span><span class="nv">NACOS_AUTH_SYSTEM_TYPE</span>:nacos<span class="k">}</span>
+
+<span class="c">### If turn on auth system:</span>
+<span class="c"># Whether open nacos server API auth system</span>
+nacos.core.auth.enabled<span class="o">=</span><span class="nb">false</span>
+<span class="c"># Whether open nacos admin API auth system</span>
+nacos.core.auth.admin.enabled<span class="o">=</span><span class="nb">true</span>
+<span class="c"># Whether open nacos console API auth system</span>
+nacos.core.auth.console.enabled<span class="o">=</span><span class="nb">true</span>
+
+<span class="c">### Turn on/off caching of auth information. By turning on this switch, the update of auth information would have a 15 seconds delay.</span>
+nacos.core.auth.caching.enabled<span class="o">=</span><span class="k">${</span><span class="nv">NACOS_AUTH_CACHE_ENABLE</span>:false<span class="k">}</span>
+
+<span class="c">### worked when nacos.core.auth.enabled=true</span>
+<span class="c">### The two properties is the white list for auth and used by identity the request from other server.</span>
+nacos.core.auth.server.identity.key<span class="o">=</span><span class="k">${</span><span class="nv">NACOS_AUTH_IDENTITY_KEY</span>:<span class="k">}</span>
+nacos.core.auth.server.identity.value<span class="o">=</span><span class="k">${</span><span class="nv">NACOS_AUTH_IDENTITY_VALUE</span>:<span class="k">}</span>
+
+<span class="c">### worked when nacos.core.auth.system.type=nacos or nacos.core.auth.console.enabled=true</span>
+<span class="c">### The token expiration in seconds:</span>
+nacos.core.auth.plugin.nacos.token.cache.enable<span class="o">=</span><span class="nb">false
+</span>nacos.core.auth.plugin.nacos.token.expire.seconds<span class="o">=</span><span class="k">${</span><span class="nv">NACOS_AUTH_TOKEN_EXPIRE_SECONDS</span>:18000<span class="k">}</span>
+<span class="c">### The default token (Base64 string):</span>
+<span class="c">#nacos.core.auth.plugin.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg=</span>
+nacos.core.auth.plugin.nacos.token.secret.key<span class="o">=</span><span class="k">${</span><span class="nv">NACOS_AUTH_TOKEN</span>:<span class="k">}</span>
+
+<span class="c">### worked when nacos.core.auth.system.type=ldap?{0} is Placeholder,replace login username</span>
+<span class="c">#nacos.core.auth.ldap.url=ldap://localhost:389</span>
+<span class="c">#nacos.core.auth.ldap.basedc=dc=example,dc=org</span>
+<span class="c">#nacos.core.auth.ldap.userDn=cn=admin,${nacos.core.auth.ldap.basedc}</span>
+<span class="c">#nacos.core.auth.ldap.password=admin</span>
+<span class="c">#nacos.core.auth.ldap.userdn=cn={0},dc=example,dc=org</span>
+<span class="c">#nacos.core.auth.ldap.filter.prefix=uid</span>
+<span class="c">#nacos.core.auth.ldap.case.sensitive=true</span>
+<span class="c">#nacos.core.auth.ldap.ignore.partial.result.exception=false</span>
+
+<span class="c">#*************** Control Plugin Related Configurations ***************#</span>
+<span class="c"># plugin type</span>
+<span class="c">#nacos.plugin.control.manager.type=nacos</span>
+
+<span class="c"># local control rule storage dir, default ${nacos.home}/data/connection and ${nacos.home}/data/tps</span>
+<span class="c">#nacos.plugin.control.rule.local.basedir=${nacos.home}</span>
+
+<span class="c"># external control rule storage type, if exist</span>
+<span class="c">#nacos.plugin.control.rule.external.storage=</span>
+
+<span class="c">#*************** Config Change Plugin Related Configurations ***************#</span>
+<span class="c"># webhook</span>
+<span class="c">#nacos.core.config.plugin.webhook.enabled=false</span>
+<span class="c"># It is recommended to use EB https://help.aliyun.com/document_detail/413974.html</span>
+<span class="c">#nacos.core.config.plugin.webhook.url=http://localhost:8080/webhook/send?token=***</span>
+<span class="c"># The content push max capacity ,byte</span>
+<span class="c">#nacos.core.config.plugin.webhook.contentMaxCapacity=102400</span>
+
+<span class="c"># whitelist</span>
+<span class="c">#nacos.core.config.plugin.whitelist.enabled=false</span>
+<span class="c"># The import file suffixs</span>
+<span class="c">#nacos.core.config.plugin.whitelist.suffixs=xml,text,properties,yaml,html</span>
+<span class="c"># fileformatcheck,which validate the import file of type and content</span>
+<span class="c">#nacos.core.config.plugin.fileformatcheck.enabled=false</span>
+
+<span class="c">#*************** Istio Plugin Related Configurations ***************#</span>
+<span class="c">### If turn on the MCP server:</span>
+nacos.istio.mcp.server.enabled<span class="o">=</span><span class="nb">false</span>
+
+<span class="c">#--------------- Nacos Experimental Features Configurations ---------------#</span>
+
+<span class="c">#*************** K8s Related Configurations ***************#</span>
+<span class="c">### If turn on the K8s sync:</span>
+nacos.k8s.sync.enabled<span class="o">=</span><span class="nb">false</span>
+
+<span class="c">### If use the Java API from an application outside a kubernetes cluster</span>
+<span class="c">#nacos.k8s.sync.outsideCluster=false</span>
+<span class="c">#nacos.k8s.sync.kubeConfig=/.kube/config</span>
+
+<span class="c">#*************** Deployment Type Configuration ***************#</span>
+
+<span class="c">### Sets the deployment type: 'merged' for joint deployment, 'server' for separate deployment server only, 'console' for separate deployment console only.</span>
+nacos.deployment.type<span class="o">=</span>merged
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>完整的 <code>docker-compose.yml</code> 文件：</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 9. <code>docker/docker-compose.yml</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="yaml"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno">  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+ 78
+ 79
+ 80
+ 81
+ 82
+ 83
+ 84
+ 85
+ 86
+ 87
+ 88
+ 89
+ 90
+ 91
+ 92
+ 93
+ 94
+ 95
+ 96
+ 97
+ 98
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+</pre></td><td class="code"><pre><span class="c1"># D瓜哥 · https://www.diguage.com</span>
+<span class="na">services</span><span class="pi">:</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3356 -uroot -p123456</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3356 -uadmin_storage -p123456</span>
+  <span class="c1"># mysql -h172.6.3.2 -P3306 -uadmin_storage -p123456 ❎</span>
+  <span class="na">mysql-storage</span><span class="pi">:</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">mysql-storage</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">.</span>
+      <span class="na">dockerfile</span><span class="pi">:</span> <span class="s">images/mysql-storage.dockerfile</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">storage/mysql:8.4</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./env/mysql.env</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/mysql/storage:/bitnami/mysql/data/</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">3356:3306"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">600M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.04'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">500M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">CMD'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">/opt/bitnami/scripts/mysql/healthcheck.sh'</span><span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">5s</span>    <span class="c1"># 请求超时时间为 5 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+<span class="c1">#    networks:</span>
+<span class="c1">#      transactions:</span>
+<span class="c1">#        ipv4_address: 172.6.3.2</span>
+
+  <span class="c1"># mysql -h127.0.0.1 -P3366 -uroot -p123456</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3366 -uadmin_order -p123456</span>
+  <span class="c1"># mysql -h172.6.3.3 -P3306 -uadmin_order -p123456</span>
+  <span class="na">mysql-order</span><span class="pi">:</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">mysql-order</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">.</span>
+      <span class="na">dockerfile</span><span class="pi">:</span> <span class="s">images/mysql-order.dockerfile</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">order/mysql:8.4</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./env/mysql.env</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/mysql/order:/bitnami/mysql/data/</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">3366:3306"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">600M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.04'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">500M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">CMD'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">/opt/bitnami/scripts/mysql/healthcheck.sh'</span><span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">5s</span>    <span class="c1"># 请求超时时间为 5 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+<span class="c1">#    networks:</span>
+<span class="c1">#      transactions:</span>
+<span class="c1">#        ipv4_address: 172.6.3.3</span>
+
+  <span class="c1"># mysql -h127.0.0.1 -P3376 -uroot -p123456</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3376 -uadmin_account -p123456</span>
+  <span class="c1"># mysql -h172.6.3.4 -P3306 -uadmin_account -p123456 ❎</span>
+  <span class="na">mysql-account</span><span class="pi">:</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">mysql-account</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">.</span>
+      <span class="na">dockerfile</span><span class="pi">:</span> <span class="s">images/mysql-account.dockerfile</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">account/mysql:8.4</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./env/mysql.env</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/mysql/account:/bitnami/mysql/data/</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">3376:3306"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">600M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.04'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">500M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">CMD'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">/opt/bitnami/scripts/mysql/healthcheck.sh'</span><span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">5s</span>    <span class="c1"># 请求超时时间为 5 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+<span class="c1">#    networks:</span>
+<span class="c1">#      transactions:</span>
+<span class="c1">#        ipv4_address: 172.6.3.4</span>
+
+  <span class="c1"># mysql -h127.0.0.1 -P3386 -uroot -p123456</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3386 -uadmin_nacos -p123456</span>
+  <span class="c1"># mysql -h172.6.3.5 -P3306 -uadmin_nacos -p123456 ❎</span>
+  <span class="na">mysql-nacos</span><span class="pi">:</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">mysql-nacos</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">.</span>
+      <span class="na">dockerfile</span><span class="pi">:</span> <span class="s">images/mysql-nacos.dockerfile</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">nacos/mysql:8.4</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./env/mysql.env</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/mysql/nacos:/bitnami/mysql/data/</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">3386:3306"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">700M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.05'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">600M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">CMD'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">/opt/bitnami/scripts/mysql/healthcheck.sh'</span><span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">5s</span>    <span class="c1"># 请求超时时间为 5 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 6 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+<span class="c1">#    networks:</span>
+<span class="c1">#      transactions:</span>
+<span class="c1">#        ipv4_address: 172.6.3.5</span>
+
+  <span class="c1"># Nacos: http://localhost:8080/index.html nacos/nacos</span>
+  <span class="c1"># https://nacos.io/docs/v3.0/manual/admin/monitor/ 文档里写的是这个链接，但是报错</span>
+  <span class="c1"># http://localhost:8848/nacos/actuator/prometheus</span>
+  <span class="c1"># http://localhost:8848/nacos/actuator/health</span>
+  <span class="na">nacos</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">nacos/nacos-server:${NACOS_VERSION:-latest}</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">nacos</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s">nacos</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./env/nacos.env</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./config/nacos/application.properties:/home/nacos/conf/application.properties</span>
+      <span class="pi">-</span> <span class="s">nacos_log:/home/nacos/logs</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8080:8080"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8848:8848"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9848:9848"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.95'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">1365M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">1G</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="c1"># 这里最好使用 actuator 健康检查链接</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span> <span class="s2">"</span><span class="s">CMD"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">curl"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">http://localhost:8080/index.html"</span> <span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 30 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">10s</span>   <span class="c1"># 请求超时时间为 10 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 5 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+    <span class="na">depends_on</span><span class="pi">:</span>
+      <span class="na">mysql-nacos</span><span class="pi">:</span>
+        <span class="na">condition</span><span class="pi">:</span> <span class="s">service_healthy</span>
+<span class="c1">#    networks:</span>
+<span class="c1">#      transactions:</span>
+<span class="c1">#        ipv4_address: 172.6.2.2</span>
+
+  <span class="c1"># mysql -h127.0.0.1 -P3396 -uroot -p123456</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3396 -uadmin_seata -p123456</span>
+  <span class="c1"># mysql -h172.6.3.6 -P3306 -uadmin_seata -p123456 ❎</span>
+  <span class="c1"># show processlist; / select user();</span>
+  <span class="na">mysql-seata</span><span class="pi">:</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">mysql-seata</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s">mysql-seata</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">.</span>
+      <span class="na">dockerfile</span><span class="pi">:</span> <span class="s">images/mysql-seata.dockerfile</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">seata/mysql:8.4</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./env/mysql.env</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/mysql/seata:/bitnami/mysql/data/</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">3396:3306"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">700M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.05'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">600M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">CMD'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">/opt/bitnami/scripts/mysql/healthcheck.sh'</span><span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">5s</span>    <span class="c1"># 请求超时时间为 5 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+<span class="c1">#    networks:</span>
+<span class="c1">#      transactions:</span>
+<span class="c1">#        ipv4_address: 172.6.3.5</span>
+
+  <span class="c1"># http://127.0.0.1:8081/   seata/seata</span>
+  <span class="c1"># http://127.0.0.1:8081/naming/v1/health -- 健康检查</span>
+  <span class="c1"># http://127.0.0.1:9897/naming/metrics -- TODO 还没整好！</span>
+  <span class="c1"># https://seata.apache.org/zh-cn/docs/ops/deploy-by-docker-compose/#nacos-db</span>
+  <span class="na">seata-naming-server</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">apache/seata-naming-server:${SEATA_VERSION:-latest}</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">seata-naming-server</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s">seata-naming-server</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8081:8081"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9897:9898"</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+      <span class="pi">-</span> <span class="s">CONSOLE_USER_USERNAME=seata</span>
+      <span class="pi">-</span> <span class="s">CONSOLE_USER_PASSWORD=seata</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/logback-naming.xml:/seata-naming-server/resources/logback-spring.xml"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.50'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">500M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">400M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="c1"># 这里最好使用 actuator 健康检查链接</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span> <span class="s2">"</span><span class="s">CMD"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">curl"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">http://localhost:8081/naming/v1/health"</span> <span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">10s</span>   <span class="c1"># 请求超时时间为 10 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+    <span class="na">depends_on</span><span class="pi">:</span>
+      <span class="na">mysql-seata</span><span class="pi">:</span>
+        <span class="na">condition</span><span class="pi">:</span> <span class="s">service_healthy</span>
+
+  <span class="c1"># http://127.0.0.1:7091/   seata/seata</span>
+  <span class="c1"># http://127.0.0.1:9898/-/healthy -- 健康检查</span>
+  <span class="c1"># http://127.0.0.1:9898/metrics -- 不报错，也没数据，奇怪！</span>
+  <span class="c1"># https://seata.apache.org/zh-cn/docs/ops/deploy-by-docker-compose/#nacos-db</span>
+  <span class="na">seata-server</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">apache/seata-server:${SEATA_VERSION:-latest}</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">seata-server</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s">seata-server</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8091:8091"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">7091:7091"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9898:9898"</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+<span class="c1">#      - CONSOLE_USER_USERNAME=seata</span>
+<span class="c1">#      - CONSOLE_USER_PASSWORD=seata</span>
+<span class="c1">#      - SEATA_PORT=8091</span>
+<span class="c1">#      - SEATA_IP=seata-server</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/application.yml:/seata-server/resources/application.yml"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/logback:/seata-server/resources/logback"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/logback-spring.xml:/seata-server/resources/logback-spring.xml"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/mysql-connector-j-8.4.0.jar:/seata-server/libs/mysql-connector-j-8.4.0.jar"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/mysql-connector-j-8.4.0.jar:/seata-server/libs/jdbc/mysql-connector-j-8.4.0.jar"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.80'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">700M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">600M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="c1"># 这里最好使用 actuator 健康检查链接</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span> <span class="s2">"</span><span class="s">CMD"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">curl"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">http://localhost:9898/-/healthy"</span> <span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">10s</span>   <span class="c1"># 请求超时时间为 10 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+    <span class="na">depends_on</span><span class="pi">:</span>
+      <span class="na">nacos</span><span class="pi">:</span>
+        <span class="na">condition</span><span class="pi">:</span> <span class="s">service_healthy</span>
+      <span class="na">seata-naming-server</span><span class="pi">:</span>
+        <span class="na">condition</span><span class="pi">:</span> <span class="s">service_healthy</span>
+      <span class="na">kafka-server</span><span class="pi">:</span>
+        <span class="na">condition</span><span class="pi">:</span> <span class="s">service_healthy</span>
+
+  <span class="c1"># https://github.com/bitnami/containers/tree/main/bitnami/kafka</span>
+  <span class="na">kafka-server</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">bitnami/kafka:${KAFKA_VERSION:-latest}</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">kafka-server</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s">kafka-server</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9092:9092"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9093:9093"</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+      <span class="c1"># KRaft settings</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_NODE_ID=0</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_PROCESS_ROLES=controller,broker</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka-server:9093</span> <span class="c1"># 这里 kafka-server 与服务名一直</span>
+      <span class="c1"># Listeners</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CLUSTER_ID=kafka-cluster</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_OFFSETS_TOPIC_NUM_PARTITIONS=2</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1</span>  <span class="c1"># 单节点集群设为1，生产环境建议≥2</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=1</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_LOG_RETENTION_BYTES=104857600</span> <span class="c1"># 100MB -- 日志总量</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_log_segment_bytes=10485760</span>    <span class="c1"># 10MB -- 单个日志段</span>
+      <span class="pi">-</span> <span class="s">KAFKA_INTER_BROKER_USER=kafka</span>
+      <span class="pi">-</span> <span class="s">KAFKA_INTER_BROKER_PASSWORD=123456</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CONTROLLER_USER=kafka</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CONTROLLER_PASSWORD=123456</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CLIENT_USERS=kafka</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CLIENT_PASSWORDS=123456</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/kafka:/bitnami/kafka</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.80'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">600M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.05'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">500M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="c1"># 这里最好使用 actuator 健康检查链接</span>
+      <span class="c1"># https://stackoverflow.com/a/78342248/951836</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span> <span class="s2">"</span><span class="s">CMD"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">kafka-cluster.sh"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">cluster-id"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">--bootstrap-server"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">kafka-server:9092"</span> <span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 30 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">10s</span>   <span class="c1"># 请求超时时间为 10 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+<span class="c1">#</span>
+<span class="c1">#  nettools:</span>
+<span class="c1">#    image: jonlabelle/network-tools:${NETWORK_TOOLS_VERSION:-latest}</span>
+<span class="c1">#    container_name: nettools</span>
+<span class="c1">#    hostname: network-tools</span>
+<span class="c1">#    environment:</span>
+<span class="c1">#      - TZ=Asia/Shanghai  # 设置时区为上海时间</span>
+<span class="c1">#    command:</span>
+<span class="c1">#      - sleep</span>
+<span class="c1">#      - "3600000"</span>
+
+<span class="na">volumes</span><span class="pi">:</span>
+  <span class="na">nacos_log</span><span class="pi">:</span>
+<span class="c1">#</span>
+<span class="c1">### docker network create --driver bridge --subnet=172.6.0.0/16 transactions</span>
+<span class="c1">### docker network create --driver macvlan --subnet=172.6.0.0/16 --gateway=172.6.1.1 -o parent=en0 transactions</span>
+<span class="c1">##networks:</span>
+<span class="c1">##  transactions:</span>
+<span class="c1">##    driver: macvlan</span>
+<span class="c1">##    driver_opts:</span>
+<span class="c1">##      parent: en0</span>
+<span class="c1">##    ipam:</span>
+<span class="c1">##      driver: default</span>
+<span class="c1">##      config:</span>
+<span class="c1">##        - subnet: 172.6.0.0/16</span>
+<span class="c1">##          gateway: "172.6.1.1"</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_清理环境"><a class="anchor" href="#_清理环境"></a>1.2. 清理环境</h3>
+<div class="paragraph">
+<p>刚刚开始搭建环境时，经常会因为有些文件和数据没有得到及时清理，影响到正常的改动。所以，可以写一个脚本来完成全部清理工作：</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 10. <code>docker/clean.sh</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="bash"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+</pre></td><td class="code"><pre><span class="c">#!/usr/bin/env bash</span>
+<span class="c">#</span>
+<span class="c"># 清理环境</span>
+<span class="c"># D瓜哥 · https://www.diguage.com</span>
+<span class="c">#</span>
+
+<span class="nv">BASEDIR</span><span class="o">=</span><span class="s2">"</span><span class="si">$(</span> <span class="nb">cd</span> <span class="s2">"</span><span class="si">$(</span> <span class="nb">dirname</span> <span class="s2">"</span><span class="k">${</span><span class="nv">BASH_SOURCE</span><span class="p">[0]</span><span class="k">}</span><span class="s2">"</span> <span class="si">)</span><span class="s2">"</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1 <span class="o">&amp;&amp;</span> <span class="nb">pwd</span> <span class="si">)</span><span class="s2">"</span>
+
+docker compose down <span class="nt">-v</span>
+
+docker image <span class="nb">rm</span> <span class="nt">-f</span> order/mysql:8.4
+
+docker image <span class="nb">rm</span> <span class="nt">-f</span> storage/mysql:8.4
+
+docker image <span class="nb">rm</span> <span class="nt">-f</span> account/mysql:8.4
+
+docker image <span class="nb">rm</span> <span class="nt">-f</span> nacos/mysql:8.4
+
+docker image <span class="nb">rm</span> <span class="nt">-f</span> seata/mysql:8.4
+
+<span class="nb">rm</span> <span class="nt">-rf</span> <span class="nv">$BASEDIR</span>/data/mysql/<span class="k">*</span>
+<span class="nb">rm</span> <span class="nt">-rf</span> <span class="nv">$BASEDIR</span>/data/kafka/<span class="k">*</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph nav-footer">
+<p>← Previous: <a href="preface.html">前言</a> | ↑ Up: <a href="index.html">深入研究分布式事务</a> | Next: <a href="cap-theorem.html">CAP 理论</a> →</p>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+最后更新时间 2025-11-25 01:39:18 UTC
+</div>
+</div>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  messageStyle: "none",
+  tex2jax: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]],
+    ignoreClass: "nostem|nolatexmath"
+  },
+  asciimath2jax: {
+    delimiters: [["\\$", "\\$"]],
+    ignoreClass: "nostem|noasciimath"
+  },
+  TeX: { equationNumbers: { autoNumber: "none" } }
+})
+MathJax.Hub.Register.StartupHook("AsciiMath Jax Ready", function () {
+  MathJax.InputJax.AsciiMath.postfilterHooks.Add(function (data, node) {
+    if ((node = data.script.parentNode) && (node = node.parentNode) && node.classList.contains("stemblock")) {
+      data.math.root.display = "block"
+    }
+    return data
+  })
+})
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>
+<script src="assets/scripts/asciidoctor-tabs.js"></script>
+<script src="assets/scripts/scroll-toc.js"></script></body>
+</html>

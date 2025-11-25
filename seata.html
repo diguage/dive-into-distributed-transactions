@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<meta name="description" content="文档模板">
+<meta name="keywords" content="文档">
+<meta name="author" content="D瓜哥">
+<title>深入研究分布式事务:  4. 基于 Seata 的分布式事务解决方案</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="assets/styles/asciidoctor.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="assets/styles/rouge-github.css">
+<style>
+    a {
+        text-decoration: none;
+    }
+
+    p > code, strong > code, div.admonitionblock tr > td.content > code {
+        color: #d14 !important;
+        background-color: #f5f5f5 !important;
+        border: 1px solid #e1e1e8;
+        white-space: nowrap;
+        border-radius: 3px;
+    }
+</style>
+<link rel="stylesheet" href="assets/styles/asciidoctor-tabs.css">
+<style>.toc-current{color:#d14;font-size:130%;font-weight: bold;} .toc-root{font-family: "Open Sans","DejaVu Sans",sans-serif;
+                       font-size: 0.9em;} #content{display: flex; flex-direction: column; flex: 1 1 auto;}
+             .nav-footer{text-align: center; margin-top: auto;}
+             .nav-footer > p > a {white-space: nowrap;}</style>
+</head>
+<body id="seata" class="book toc2 toc-left">
+<div id="header">
+<h1>深入研究分布式事务:  4. 基于 Seata 的分布式事务解决方案</h1>
+<div class="details">
+<span id="author" class="author">D瓜哥</span><br>
+<span id="email" class="email"><a href="https://www.diguage.com" class="bare">https://www.diguage.com</a></span><br>
+<span id="revdate">0.0.1-SNAPSHOT</span>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">目录</div>
+<p><span class="toc-root"><a href="index.html">深入研究分布式事务</a></span></p><ul class="sectlevel1">
+<li><a href="preface.html">前言</a>
+</li>
+<li><a href="environment.html">1. 开发环境搭建</a>
+</li>
+<li><a href="cap-theorem.html">2. CAP 理论</a>
+</li>
+<li><a href="base-transaction.html">3. 柔性事务</a>
+</li>
+<li><a href="seata.html"><span class="toc-current">4. 基于 Seata 的分布式事务解决方案</span></a>
+<ul class="sectlevel2">
+<li><a href="seata.html#seata-env">4.1. 基于 Seata 的分布式事务解决方案</a>
+<ul class="sectlevel3">
+<li><a href="seata.html#_搭建数据库_2">4.1.1. 搭建数据库</a>
+</li>
+<li><a href="seata.html#_启动_naming_server">4.1.2. 启动 Naming Server</a>
+</li>
+</ul>
+</li>
+<li><a href="seata.html#seata-at-mode">4.2. Seata AT 模式</a>
+</li>
+<li><a href="seata.html#seata-tcc-mode">4.3. Seata TCC 模式</a>
+</li>
+<li><a href="seata.html#seata-saga-mode">4.4. Seata SAGA 模式</a>
+</li>
+<li><a href="seata.html#seata-xa-mode">4.5. Seata XA 模式</a>
+</li>
+<li><a href="seata.html#_参考资料_3">4.6. 参考资料</a>
+</li>
+</ul>
+</li>
+<li><a href="best-effort-notification.html">5. 最大努力通知方案</a>
+</li>
+<li><a href="xa-mysql.html">6. MySQL 原生 XA 支持</a>
+</li>
+<li><a href="atomikos.html">7. 基于 Atomikos 的分布式事务解决方案</a>
+</li>
+<li><a href="narayana.html">8. 基于 Narayana 的分布式事务解决方案</a>
+</li>
+<li><a href="other-solution.html">9. 其他解决方案</a>
+</li>
+<li><a href="note-and-questions.html">Appendix C: 随笔及问题</a>
+</li>
+<li><a href="license.html">Appendix D: 版权声明</a>
+</li>
+</ul>
+</div>
+</div>
+<div id="content"><div class="sect2"><h3 id="_友情支持">友情支持</h3><div class="paragraph"><p>如果您觉得这个笔记对您有所帮助，看在D瓜哥码这么多字的辛苦上，请友情支持一下，D瓜哥感激不尽，😜</p></div><table class="tableblock frame-none grid-all stretch"><colgroup><col style="width: 50%;"><col style="width: 50%;"></colgroup><tbody><tr><td class="tableblock halign-center valign-top"><p class="tableblock"><span class="image"><img src="./assets/images/alipay.png" alt="支付宝" width="85%" title="支付宝"></span></p></td><td class="tableblock halign-center valign-top"><p class="tableblock"><span class="image"><img src="./assets/images/wxpay.jpg" alt="微信" width="85%" title="微信"></span></p></td></tr></tbody></table><div class="paragraph"><p>有些打赏的朋友希望可以加个好友，欢迎关注D 瓜哥的微信公众号，这样就可以通过公众号的回复直接给我发信息。</p></div><div class="paragraph"><p><span class="image"><img src="./assets/images/wx-jikerizhi.png" alt="wx jikerizhi" width="98%"></span></p></div><div class="admonitionblock tip"><table><tbody><tr><td class="icon"><i class="fa icon-tip" title="Tip"></i></td><td class="content"><strong>公众号的微信号是: <code>jikerizhi</code></strong>。<em>因为众所周知的原因，有时图片加载不出来。 如果图片加载不出来可以直接通过搜索微信号来查找我的公众号。</em></td></tr></tbody></table></div></div>
+<div class="sect1">
+<h2 id="seata"><a class="anchor" href="#seata"></a> 4. 基于 Seata 的分布式事务解决方案</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="seata-env"><a class="anchor" href="#seata-env"></a>4.1. 基于 Seata 的分布式事务解决方案</h3>
+<div class="paragraph">
+<p>Seata 的环境搭建起来比较麻烦：官方文档严重滞后，而且可能是考虑 MySQL 多版本依赖的兼容性问题，需要自己手动挂载 MySQL 的 JDBC 依赖。</p>
+</div>
+<div class="sect3">
+<h4 id="_搭建数据库_2"><a class="anchor" href="#_搭建数据库_2"></a>4.1.1. 搭建数据库</h4>
+<div class="paragraph">
+<p>Seata 初始化脚本从 <a href="https://github.com/apache/incubator-seata/blob/2.4.0/script/server/db/mysql.sql" target="_blank" rel="noopener">mysql.sql at 2.4.0</a> 获取。根据 Seata 的版本来调整 URL 找到对应的初始化脚本文件。</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 11. <code>docker/config/seata/seata-schema.sql</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="sql"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+</pre></td><td class="code"><pre><span class="c1">-- create root user and grant rights</span>
+<span class="c1">-- https://stackoverflow.com/a/16592722</span>
+<span class="k">CREATE</span> <span class="k">USER</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="s1">'admin_seata'</span><span class="o">@</span><span class="s1">'%'</span> <span class="n">IDENTIFIED</span> <span class="k">BY</span> <span class="s1">'123456'</span><span class="p">;</span>
+<span class="k">GRANT</span> <span class="k">ALL</span> <span class="k">ON</span> <span class="nv">`db_seata`</span><span class="p">.</span><span class="o">*</span> <span class="k">TO</span> <span class="s1">'admin_seata'</span><span class="o">@</span><span class="s1">'%'</span><span class="p">;</span>
+
+<span class="n">FLUSH</span> <span class="k">PRIVILEGES</span><span class="p">;</span>
+
+<span class="c1">-- create databases</span>
+<span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="nv">`db_seata`</span>
+       <span class="k">default</span> <span class="nb">character</span> <span class="k">set</span> <span class="n">utf8mb4</span> <span class="k">collate</span> <span class="n">utf8mb4_0900_bin</span><span class="p">;</span>
+
+<span class="n">USE</span> <span class="nv">`db_seata`</span><span class="p">;</span>
+
+<span class="c1">-- 以下文件是从 https://github.com/apache/incubator-seata/blob/2.4.0/script/server/db/mysql.sql 下载</span>
+
+<span class="c1">-- -------------------------------- The script used when storeMode is 'db' --------------------------------</span>
+<span class="c1">-- the table to store GlobalSession data</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="nv">`global_table`</span>
+<span class="p">(</span>
+    <span class="nv">`xid`</span>                       <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`transaction_id`</span>            <span class="nb">BIGINT</span><span class="p">,</span>
+    <span class="nv">`status`</span>                    <span class="nb">TINYINT</span>      <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`application_id`</span>            <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">32</span><span class="p">),</span>
+    <span class="nv">`transaction_service_group`</span> <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">32</span><span class="p">),</span>
+    <span class="nv">`transaction_name`</span>          <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">),</span>
+    <span class="nv">`timeout`</span>                   <span class="nb">INT</span><span class="p">,</span>
+    <span class="nv">`begin_time`</span>                <span class="nb">BIGINT</span><span class="p">,</span>
+    <span class="nv">`application_data`</span>          <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">2000</span><span class="p">),</span>
+    <span class="nv">`gmt_create`</span>                <span class="nb">DATETIME</span><span class="p">,</span>
+    <span class="nv">`gmt_modified`</span>              <span class="nb">DATETIME</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`xid`</span><span class="p">),</span>
+    <span class="k">KEY</span> <span class="nv">`idx_status_gmt_modified`</span> <span class="p">(</span><span class="nv">`status`</span> <span class="p">,</span> <span class="nv">`gmt_modified`</span><span class="p">),</span>
+    <span class="k">KEY</span> <span class="nv">`idx_transaction_id`</span> <span class="p">(</span><span class="nv">`transaction_id`</span><span class="p">)</span>
+    <span class="p">)</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">InnoDB</span><span class="p">;</span>
+
+<span class="c1">-- the table to store BranchSession data</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="nv">`branch_table`</span>
+<span class="p">(</span>
+    <span class="nv">`branch_id`</span>         <span class="nb">BIGINT</span>       <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`xid`</span>               <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`transaction_id`</span>    <span class="nb">BIGINT</span><span class="p">,</span>
+    <span class="nv">`resource_group_id`</span> <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">32</span><span class="p">),</span>
+    <span class="nv">`resource_id`</span>       <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span>
+    <span class="nv">`branch_type`</span>       <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span>
+    <span class="nv">`status`</span>            <span class="nb">TINYINT</span><span class="p">,</span>
+    <span class="nv">`client_id`</span>         <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span>
+    <span class="nv">`application_data`</span>  <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">2000</span><span class="p">),</span>
+    <span class="nv">`gmt_create`</span>        <span class="nb">DATETIME</span><span class="p">(</span><span class="mi">6</span><span class="p">),</span>
+    <span class="nv">`gmt_modified`</span>      <span class="nb">DATETIME</span><span class="p">(</span><span class="mi">6</span><span class="p">),</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`branch_id`</span><span class="p">),</span>
+    <span class="k">KEY</span> <span class="nv">`idx_xid`</span> <span class="p">(</span><span class="nv">`xid`</span><span class="p">)</span>
+    <span class="p">)</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">InnoDB</span><span class="p">;</span>
+
+<span class="c1">-- the table to store lock data</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="nv">`lock_table`</span>
+<span class="p">(</span>
+    <span class="nv">`row_key`</span>        <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`xid`</span>            <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">),</span>
+    <span class="nv">`transaction_id`</span> <span class="nb">BIGINT</span><span class="p">,</span>
+    <span class="nv">`branch_id`</span>      <span class="nb">BIGINT</span>       <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`resource_id`</span>    <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span>
+    <span class="nv">`table_name`</span>     <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">32</span><span class="p">),</span>
+    <span class="nv">`pk`</span>             <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">36</span><span class="p">),</span>
+    <span class="nv">`status`</span>         <span class="nb">TINYINT</span>      <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="s1">'0'</span> <span class="k">COMMENT</span> <span class="s1">'0:locked ,1:rollbacking'</span><span class="p">,</span>
+    <span class="nv">`gmt_create`</span>     <span class="nb">DATETIME</span><span class="p">,</span>
+    <span class="nv">`gmt_modified`</span>   <span class="nb">DATETIME</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`row_key`</span><span class="p">),</span>
+    <span class="k">KEY</span> <span class="nv">`idx_status`</span> <span class="p">(</span><span class="nv">`status`</span><span class="p">),</span>
+    <span class="k">KEY</span> <span class="nv">`idx_branch_id`</span> <span class="p">(</span><span class="nv">`branch_id`</span><span class="p">),</span>
+    <span class="k">KEY</span> <span class="nv">`idx_xid`</span> <span class="p">(</span><span class="nv">`xid`</span><span class="p">)</span>
+    <span class="p">)</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">InnoDB</span><span class="p">;</span>
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="nv">`distributed_lock`</span>
+<span class="p">(</span>
+    <span class="nv">`lock_key`</span>       <span class="nb">CHAR</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`lock_value`</span>     <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="nv">`expire`</span>         <span class="nb">BIGINT</span><span class="p">,</span>
+    <span class="k">primary</span> <span class="k">key</span> <span class="p">(</span><span class="nv">`lock_key`</span><span class="p">)</span>
+    <span class="p">)</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">InnoDB</span><span class="p">;</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`distributed_lock`</span> <span class="p">(</span><span class="n">lock_key</span><span class="p">,</span> <span class="n">lock_value</span><span class="p">,</span> <span class="n">expire</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">'AsyncCommitting'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`distributed_lock`</span> <span class="p">(</span><span class="n">lock_key</span><span class="p">,</span> <span class="n">lock_value</span><span class="p">,</span> <span class="n">expire</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">'RetryCommitting'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`distributed_lock`</span> <span class="p">(</span><span class="n">lock_key</span><span class="p">,</span> <span class="n">lock_value</span><span class="p">,</span> <span class="n">expire</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">'RetryRollbacking'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`distributed_lock`</span> <span class="p">(</span><span class="n">lock_key</span><span class="p">,</span> <span class="n">lock_value</span><span class="p">,</span> <span class="n">expire</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">'TxTimeoutCheck'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="nv">`vgroup_table`</span>
+<span class="p">(</span>
+    <span class="nv">`vGroup`</span>    <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span>
+    <span class="nv">`namespace`</span> <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span>
+    <span class="nv">`cluster`</span>   <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`idx_vgroup_namespace_cluster`</span> <span class="p">(</span><span class="nv">`vGroup`</span><span class="p">,</span><span class="nv">`namespace`</span><span class="p">,</span><span class="nv">`cluster`</span><span class="p">)</span>
+    <span class="p">)</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">InnoDB</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Dockerfile 配置文件：</p>
+</div>
+<div class="listingblock">
+<div class="title">代码 12. <code>docker/images/mysql-nacos.dockerfile</code></div>
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="docker"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="k">FROM</span><span class="s"> bitnami/mysql:8.4</span>
+
+<span class="k">ADD</span><span class="s"> ./config/seata/seata-schema.sql /docker-entrypoint-initdb.d/nacos-schema.sql</span>
+
+<span class="c"># https://github.com/bitnami/containers/blob/main/bitnami/mysql/9.3/debian-12/Dockerfile</span>
+<span class="k">EXPOSE</span><span class="s"> 3306</span>
+<span class="k">USER</span><span class="s"> 1001</span>
+<span class="k">ENTRYPOINT</span><span class="s"> [ "/opt/bitnami/scripts/mysql/entrypoint.sh" ]</span>
+<span class="k">CMD</span><span class="s"> [ "/opt/bitnami/scripts/mysql/run.sh" ]</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_启动_naming_server"><a class="anchor" href="#_启动_naming_server"></a>4.1.2. 启动 Naming Server</h4>
+<div class="paragraph">
+<p>Seata 从 2.4.0 开始，把 UI 页面挪到了 Seata Naming Server 服务中。如果想要查看 UI 页面，就需要单独启动Seata Naming Server。这个配置还比较简单：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="yaml"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+</pre></td><td class="code"><pre><span class="c1"># D瓜哥 · https://www.diguage.com</span>
+<span class="na">services</span><span class="pi">:</span>
+  <span class="c1"># http://127.0.0.1:8081/   seata/seata</span>
+  <span class="c1"># http://127.0.0.1:8081/naming/v1/health -- 健康检查</span>
+  <span class="c1"># http://127.0.0.1:9897/naming/metrics -- TODO 还没整好！</span>
+  <span class="c1"># https://seata.apache.org/zh-cn/docs/ops/deploy-by-docker-compose/#nacos-db</span>
+  <span class="na">seata-naming-server</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">apache/seata-naming-server:${SEATA_VERSION:-latest}</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">seata-naming-server</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s">seata-naming-server</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8081:8081"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9897:9898"</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/logback-naming.xml:/seata-naming-server/resources/logback-spring.xml"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.50'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">500M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">400M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="c1"># 这里最好使用 actuator 健康检查链接</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span> <span class="s2">"</span><span class="s">CMD"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">curl"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">http://localhost:8081/naming/v1/health"</span> <span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">10s</span>   <span class="c1"># 请求超时时间为 10 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+    <span class="na">depends_on</span><span class="pi">:</span>
+      <span class="na">mysql-seata</span><span class="pi">:</span>
+        <span class="na">condition</span><span class="pi">:</span> <span class="s">service_healthy</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight nowrap"><code data-lang="yaml"><table class="linenotable"><tbody><tr><td class="linenos gl"><pre class="lineno">  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+ 78
+ 79
+ 80
+ 81
+ 82
+ 83
+ 84
+ 85
+ 86
+ 87
+ 88
+ 89
+ 90
+ 91
+ 92
+ 93
+ 94
+ 95
+ 96
+ 97
+ 98
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+</pre></td><td class="code"><pre><span class="c1"># D瓜哥 · https://www.diguage.com</span>
+<span class="c1"># D瓜哥 · https://www.diguage.com</span>
+<span class="na">services</span><span class="pi">:</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3396 -uroot -p123456</span>
+  <span class="c1"># mysql -h127.0.0.1 -P3396 -uadmin_seata -p123456</span>
+  <span class="c1"># mysql -h172.6.3.6 -P3306 -uadmin_seata -p123456 ❎</span>
+  <span class="c1"># show processlist; / select user();</span>
+  <span class="na">mysql-seata</span><span class="pi">:</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">mysql-seata</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s">mysql-seata</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">.</span>
+      <span class="na">dockerfile</span><span class="pi">:</span> <span class="s">images/mysql-seata.dockerfile</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">seata/mysql:8.4</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./env/mysql.env</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/mysql/seata:/bitnami/mysql/data/</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">3396:3306"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">700M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.05'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">600M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">CMD'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">/opt/bitnami/scripts/mysql/healthcheck.sh'</span><span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">5s</span>    <span class="c1"># 请求超时时间为 5 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+  <span class="c1">#    networks:</span>
+  <span class="c1">#      transactions:</span>
+  <span class="c1">#        ipv4_address: 172.6.3.5</span>
+
+  <span class="c1"># http://127.0.0.1:8081/   seata/seata</span>
+  <span class="c1"># http://127.0.0.1:8081/naming/v1/health -- 健康检查</span>
+  <span class="c1"># http://127.0.0.1:9897/naming/metrics -- TODO 还没整好！</span>
+  <span class="c1"># https://seata.apache.org/zh-cn/docs/ops/deploy-by-docker-compose/#nacos-db</span>
+  <span class="na">seata-naming-server</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">apache/seata-naming-server:${SEATA_VERSION:-latest}</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">seata-naming-server</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s">seata-naming-server</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8081:8081"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9897:9898"</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/logback-naming.xml:/seata-naming-server/resources/logback-spring.xml"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.50'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">500M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">400M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="c1"># 这里最好使用 actuator 健康检查链接</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span> <span class="s2">"</span><span class="s">CMD"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">curl"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">http://localhost:8081/naming/v1/health"</span> <span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">10s</span>   <span class="c1"># 请求超时时间为 10 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+    <span class="na">depends_on</span><span class="pi">:</span>
+      <span class="na">mysql-seata</span><span class="pi">:</span>
+        <span class="na">condition</span><span class="pi">:</span> <span class="s">service_healthy</span>
+
+  <span class="c1"># http://127.0.0.1:7091/   seata/seata</span>
+  <span class="c1"># http://127.0.0.1:9898/-/healthy -- 健康检查</span>
+  <span class="c1"># http://127.0.0.1:9898/metrics -- 不报错，也没数据，奇怪！</span>
+  <span class="c1"># https://seata.apache.org/zh-cn/docs/ops/deploy-by-docker-compose/#nacos-db</span>
+  <span class="na">seata-server</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">apache/seata-server:${SEATA_VERSION:-latest}</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">seata-server</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s">seata-server</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8091:8091"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">7091:7091"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9898:9898"</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+    <span class="c1">#      - SEATA_PORT=8091</span>
+    <span class="c1">#      - SEATA_IP=seata-server</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/application.yml:/seata-server/resources/application.yml"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/logback:/seata-server/resources/logback"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/logback-spring.xml:/seata-server/resources/logback-spring.xml"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/mysql-connector-j-8.4.0.jar:/seata-server/libs/mysql-connector-j-8.4.0.jar"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">./config/seata/mysql-connector-j-8.4.0.jar:/seata-server/libs/jdbc/mysql-connector-j-8.4.0.jar"</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.80'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">700M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.10'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">600M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="c1"># 这里最好使用 actuator 健康检查链接</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span> <span class="s2">"</span><span class="s">CMD"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">curl"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">http://localhost:9898/-/healthy"</span> <span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 15 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">10s</span>   <span class="c1"># 请求超时时间为 10 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+    <span class="na">depends_on</span><span class="pi">:</span>
+      <span class="na">nacos</span><span class="pi">:</span>
+        <span class="na">condition</span><span class="pi">:</span> <span class="s">service_healthy</span>
+      <span class="na">seata-naming-server</span><span class="pi">:</span>
+        <span class="na">condition</span><span class="pi">:</span> <span class="s">service_healthy</span>
+      <span class="na">kafka-server</span><span class="pi">:</span>
+        <span class="na">condition</span><span class="pi">:</span> <span class="s">service_healthy</span>
+
+  <span class="c1"># https://github.com/bitnami/containers/tree/main/bitnami/kafka</span>
+  <span class="na">kafka-server</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">bitnami/kafka:${KAFKA_VERSION:-latest}</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">kafka-server</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s">kafka-server</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9092:9092"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9093:9093"</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">TZ=Asia/Shanghai</span>  <span class="c1"># 设置时区为上海时间</span>
+      <span class="c1"># KRaft settings</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_NODE_ID=0</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_PROCESS_ROLES=controller,broker</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka-server:9093</span> <span class="c1"># 这里 kafka-server 与服务名一直</span>
+      <span class="c1"># Listeners</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CLUSTER_ID=kafka-cluster</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_OFFSETS_TOPIC_NUM_PARTITIONS=2</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1</span>  <span class="c1"># 单节点集群设为1，生产环境建议≥2</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=1</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_LOG_RETENTION_BYTES=104857600</span> <span class="c1"># 100MB -- 日志总量</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CFG_log_segment_bytes=10485760</span>    <span class="c1"># 10MB -- 单个日志段</span>
+      <span class="pi">-</span> <span class="s">KAFKA_INTER_BROKER_USER=kafka</span>
+      <span class="pi">-</span> <span class="s">KAFKA_INTER_BROKER_PASSWORD=123456</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CONTROLLER_USER=kafka</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CONTROLLER_PASSWORD=123456</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CLIENT_USERS=kafka</span>
+      <span class="pi">-</span> <span class="s">KAFKA_CLIENT_PASSWORDS=123456</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./data/kafka:/bitnami/kafka</span>
+    <span class="na">deploy</span><span class="pi">:</span>
+      <span class="na">resources</span><span class="pi">:</span>
+        <span class="na">limits</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.80'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">600M</span>
+        <span class="na">reservations</span><span class="pi">:</span>
+          <span class="na">cpus</span><span class="pi">:</span> <span class="s1">'</span><span class="s">0.05'</span>
+          <span class="na">memory</span><span class="pi">:</span> <span class="s">500M</span>
+    <span class="na">healthcheck</span><span class="pi">:</span>
+      <span class="c1"># 这里最好使用 actuator 健康检查链接</span>
+      <span class="c1"># https://stackoverflow.com/a/78342248/951836</span>
+      <span class="na">test</span><span class="pi">:</span> <span class="pi">[</span> <span class="s2">"</span><span class="s">CMD"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">kafka-cluster.sh"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">cluster-id"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">--bootstrap-server"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">kafka-server:9092"</span> <span class="pi">]</span>
+      <span class="na">interval</span><span class="pi">:</span> <span class="s">15s</span>  <span class="c1"># 每 30 秒检查一次</span>
+      <span class="na">timeout</span><span class="pi">:</span> <span class="s">10s</span>   <span class="c1"># 请求超时时间为 10 秒</span>
+      <span class="na">retries</span><span class="pi">:</span> <span class="m">10</span>    <span class="c1"># 如果检查失败，最多重试 10 次</span>
+      <span class="na">start_period</span><span class="pi">:</span> <span class="s">60s</span>  <span class="c1"># 等待 60 秒后再开始进行 healthcheck</span>
+</pre></td></tr></tbody></table></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="seata-at-mode"><a class="anchor" href="#seata-at-mode"></a>4.2. Seata AT 模式</h3>
+
+</div>
+<div class="sect2">
+<h3 id="seata-tcc-mode"><a class="anchor" href="#seata-tcc-mode"></a>4.3. Seata TCC 模式</h3>
+
+</div>
+<div class="sect2">
+<h3 id="seata-saga-mode"><a class="anchor" href="#seata-saga-mode"></a>4.4. Seata SAGA 模式</h3>
+
+</div>
+<div class="sect2">
+<h3 id="seata-xa-mode"><a class="anchor" href="#seata-xa-mode"></a>4.5. Seata XA 模式</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_参考资料_3"><a class="anchor" href="#_参考资料_3"></a>4.6. 参考资料</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="https://github.com/apache/incubator-seata-samples" target="_blank" rel="noopener">apache/incubator-seata-samples: Apache Seata(incubating) Samples for Java</a></p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph nav-footer">
+<p>← Previous: <a href="base-transaction.html">柔性事务</a> | ↑ Up: <a href="index.html">深入研究分布式事务</a> | Next: <a href="best-effort-notification.html">最大努力通知方案</a> →</p>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+最后更新时间 2025-11-25 01:39:18 UTC
+</div>
+</div>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  messageStyle: "none",
+  tex2jax: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]],
+    ignoreClass: "nostem|nolatexmath"
+  },
+  asciimath2jax: {
+    delimiters: [["\\$", "\\$"]],
+    ignoreClass: "nostem|noasciimath"
+  },
+  TeX: { equationNumbers: { autoNumber: "none" } }
+})
+MathJax.Hub.Register.StartupHook("AsciiMath Jax Ready", function () {
+  MathJax.InputJax.AsciiMath.postfilterHooks.Add(function (data, node) {
+    if ((node = data.script.parentNode) && (node = node.parentNode) && node.classList.contains("stemblock")) {
+      data.math.root.display = "block"
+    }
+    return data
+  })
+})
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>
+<script src="assets/scripts/asciidoctor-tabs.js"></script>
+<script src="assets/scripts/scroll-toc.js"></script></body>
+</html>
