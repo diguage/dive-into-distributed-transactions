@@ -156,7 +156,7 @@ jobs:
           cat $HOME/.blockdiagrc
 
       - name: Build 🏗
-        run: mvn package
+        run: mvn package -Pasciidoc
 
       - name: Add Reward Qrcode 💰
         run: |
