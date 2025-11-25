@@ -3,9 +3,13 @@
 
 年久失修的一些开源解决方案。
 
+. https://github.com/eventuate-tram/eventuate-tram-sagas[eventuate-tram/eventuate-tram-sagas: Sagas for microservices^]
 . https://github.com/scalar-labs/btm[Bitronix Transaction Manager (BTM): JTA Transaction Manager^]
 . https://www.dtm.pub/[DTM 开源项目文档^]
 . https://github.com/dromara/hmily[dromara/hmily: Distributed transaction solutions^]
+. https://github.com/liuyangming/ByteTCC[liuyangming/ByteTCC: ByteTCC is a distributed transaction manager based on the TCC(Try/Confirm/Cancel) mechanism.^]
+. https://github.com/apache/servicecomb-saga-actuator[apache/servicecomb-saga-actuator: Apache ServiceComb Saga Actuator^]
+
 
 == 参考资料
 

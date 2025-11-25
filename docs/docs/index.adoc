@@ -32,10 +32,6 @@ include::narayana.adoc[leveloffset=+1]
 
 include::other-solution.adoc[leveloffset=+1]
 
-include::note-and-questions.adoc[leveloffset=+1]
+include::notes-and-tips.adoc[leveloffset=+1]
 
 include::license.adoc[leveloffset=+1]
-
-include::notes.adoc[leveloffset=+1]
-
-
